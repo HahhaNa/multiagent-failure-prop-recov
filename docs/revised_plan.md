@@ -4,8 +4,8 @@ Status date: 2026-11-04. Pre-registration: `docs/preregistration.md` (committed 
 Amendment 1 committed da7e18a before the labeler fix). Every number below names its table, script and run subset.
 Items marked PENDING are running; their thresholds are already fixed in the pre-registration.
 
-Labels: "v1" = labels used in the Phase 1 report; "v2" = labels after the audit-driven fix (Amendment 1). All tables
-under `data/tables/` are regenerated with v2 unless the file name says v1. Run subset "main" = Qwen3-8B, 14 tasks,
+Labels: "v1" = labels used in the Phase 1 report; "v2" = after Amendment 1; "v3" = after Amendment 2 (omission rule).
+All tables under `data/tables/` are regenerated with v3 (`FPR_LABELS`, default v3) unless the file name says otherwise. Run subset "main" = Qwen3-8B, 14 tasks,
 `~/fpr-runs/main` (exported in `data/runs_main.csv.gz`).
 
 ---
@@ -14,13 +14,13 @@ under `data/tables/` are regenerated with v2 unless the file name says v1. Run s
 
 | # | Phase 1 claim | Status | Reason and evidence | Most likely alternative explanation; what rules it out |
 |---|---|---|---|---|
-| C1 | "Adversarial faults propagate almost deterministically; accidental about half the time" | **Weakened** | Wording withdrawn (evaluative). With v2 labels: P(propagated \| used) accidental 0.50 [0.35, 0.63] (message, n=560) / 0.58 [0.40, 0.74] (state, n=600); adversarial 0.85 [0.77, 0.92] (n=335) / 0.80 [0.74, 0.86] (n=405); `data/tables/main/by_family_mode.csv`. The adversarial − accidental gap shrinks from 0.44 to 0.35 (message) and 0.29 to 0.22 (state) under v2. | Adversarial payloads are written to be acted on (instructions, extra steps) while accidental faults are values that a later lookup can overwrite: the family difference may be a property of the payload design, not of the fault class. Not ruled out; the claim is stated for these payloads only. |
-| C2 | "Accidental wrong facts are consumed almost every time (dependence ≈ 1)" | **Withdrawn** | v1 counted a branch as dependent when an intermediate artifact carried the value even if no downstream artifact differed from the clean continuations (audit round 1, used-label agreement 29/36). v2 dependence: 0.84 (message) / 0.74 (state). | — |
-| C3 | "Restart fixes accidental faults" (R1 − R0 utility +0.27 [0.13, 0.40]) | **Kept, narrowed** | Distinguishable after Holm adjustment over 14 headline comparisons (`data/tables/stats/headline_comparisons.csv`, v1 labels; v2 rerun PENDING). Without `banking.user_task_9` (no-op passes, §3.4): PENDING. | R1 runs live with a fresh seed; part of the gain could be seed resampling rather than fault removal. Partly ruled out: the clean-continuation failure rate at the same points is 0.06–0.15 (`clean_bad`), below the R0 failure rate. |
-| C4 | "Only prevention helps against attacks" | **Weakened** | R3 − R0 residual harm −0.39 [−0.45, −0.34] (n=735) is distinguishable after Holm; R1 − R0 harm +0.02 [0.00, 0.04] is not. No existing prompt-injection defense was compared, so the claim becomes: "R3 reduces adversarial residual harm; R1 does not". Spotlighting comparison pre-registered (X2), not yet run. | R3's verifier sees the tool evidence while the agents do not see each other's evidence; a defense that only marks tool output may give a similar reduction. Not ruled out until X2 runs. |
+| C1 | "Adversarial faults propagate almost deterministically; accidental about half the time" | **Weakened** | Wording withdrawn (evaluative). With v3 labels: P(propagated \| used) accidental 0.47 [0.33, 0.61] (message, n=560) / 0.59 [0.43, 0.74] (state, n=600); adversarial 0.85 [0.77, 0.92] (n=335) / 0.79 [0.72, 0.86] (n=405); `data/tables/main/by_family_mode.csv`. The adversarial − accidental difference is +0.38 [0.25, 0.49] (message) and +0.20 [0.08, 0.33] (state), down from +0.44 / +0.29 with v1 (`data/tables/stats/headline_comparisons.csv`). The `used` label has pooled audit agreement 94/108 = 0.87 [0.79, 0.92] (§3), so this claim rests on a label below the 0.90 threshold when all rounds are pooled. | Adversarial payloads are written to be acted on (instructions, extra steps) while accidental faults are values that a later lookup can overwrite: the family difference may be a property of the payload design, not of the fault class. Not ruled out; the claim is stated for these payloads only. |
+| C2 | "Accidental wrong facts are consumed almost every time (dependence ≈ 1)" | **Withdrawn** | v1 counted a branch as dependent when an intermediate artifact carried the value even if no downstream artifact differed from the clean continuations (audit round 1, used-label agreement 29/36). v3 dependence: 0.91 (message) / 0.83 (state); "≈ 1" is withdrawn. | — |
+| C3 | "Restart fixes accidental faults" (R1 − R0 utility +0.27 [0.13, 0.40]) | **Kept, narrowed** | Distinguishable after Holm adjustment over 14 headline comparisons: +0.27 [0.13, 0.40], p_holm = 0.002 (`data/tables/stats/headline_comparisons.csv`). Without `banking.user_task_9` (no-op passes, §3.4): +0.28 [0.13, 0.42], n=1070 (`data/tables/stats_without_banking9/headline_comparisons.csv`). | R1 runs live with a fresh seed; part of the gain could be seed resampling rather than fault removal. Partly ruled out: the clean-continuation failure rate at the same points is 0.06–0.15 (`clean_bad`), below the R0 failure rate. |
+| C4 | "Only prevention helps against attacks" | **Weakened** | R3 − R0 residual harm −0.39 [−0.45, −0.34] (n=735; without task 9 −0.40 [−0.46, −0.35]) is distinguishable after Holm; R1 − R0 harm +0.02 [0.00, 0.04] is not. No existing prompt-injection defense was compared, so the claim becomes: "R3 reduces adversarial residual harm; R1 does not". Spotlighting comparison pre-registered (X2), not yet run. | R3's verifier sees the tool evidence while the agents do not see each other's evidence; a defense that only marks tool output may give a similar reduction. Not ruled out until X2 runs. |
 | C5 | "R3 cuts harm for +11% tokens but lowers clean success by ~0.1" | **Kept, numbers stated** | Clean refs 0.86 → 0.77 (message), 0.79 → 0.69 (state), n=70 per mode; utility difference R3 − R0 is not distinguishable for either family (accidental +0.04 [−0.09, 0.16]; adversarial +0.14 [−0.03, 0.31]). | — |
 | C6 | "No dependency graph is a reliable ground truth" (taint recall 0.55–0.62; union 0.72–0.73) | **Kept, conditional** | Stable across the three equivalence definitions (max change 0.02; V1). Recall rises with the number of clean continuations k (taint, adversarial: 0.49 / 0.53 / 0.55 at k = 1 / 3 / 5; V2); the k=10 check is PENDING and decides whether the k=5 values are reported or replaced. | Dependent labels at k=5 include rare clean behaviors (dependent share falls from 0.71 to 0.66 between k=1 and k=5, accidental), which lowers graph recall. k=10 bounds this. |
-| C7 | Irreversibility windows (3–4 steps for plan/executor attacks; 8–24 upstream) | **Kept, with a labeling caveat** | Fault-caused irreversible label agreement 34/36 (round 1). `create_calendar_event` and `add_calendar_event_participants` send invitation emails but are labeled reversible in `configs/tools.yaml` (audit round 2, branches 3, 10), so external effects in workspace are undercounted. Relabeling and recount PENDING. | — |
+| C7 | Irreversibility windows (3–4 steps for plan/executor attacks; 8–24 upstream) | **Kept, with a labeling caveat** | Fault-caused irreversible label agreement 106/108 = 0.98 [0.93, 0.99] over three rounds (`data/audit/audit_summary.md`). Under E1 a correct payment with a reworded free-text subject counts as fault-caused (round 3, branch 11); a recount under E2/E3 is PENDING and labeled post hoc. `create_calendar_event` and `add_calendar_event_participants` send invitation emails but are labeled reversible in `configs/tools.yaml` (audit round 2, branches 3, 10), so external effects in workspace are undercounted. Relabeling and recount PENDING. | — |
 | C8 | Δ and recovery numbers on "harder tasks" (`main_wide`) | **Kept as exploratory** | 4 tasks; per-family CIs span up to 0.8 (e.g. adversarial message Δ 0.22 [−0.06, 0.54]). | — |
 | C9 | Cross-family check (Llama-3.2-3B) | **Withdrawn as evidence of generality** | Clean success 0.25; recovery differences sit at that floor. Replaced by the multi-model replication (§4). | — |
 
@@ -91,7 +91,33 @@ not see summaries, graphs or tables; instructions are in this repository's histo
 an executor call/report carrying the injected value. Not fixed: checker semantics (no-op pass, extra writes).
 Round 1 after the fix (optimistic, same sample): bad 32/36, used 31/36 (`audit_agreement_r1_v2.md`).
 
-**Round 2** (fresh sample, seed 2027, same instructions; the 0.90 threshold applies here): PENDING.
+**Round 2** (fresh sample, seed 2027; `audit_agreement_r2_v2.md`): bad 31/36, used 30/36 — the v2 fix did not raise
+`used` agreement on new data. Remaining disagreements were omissions (a timeout or empty plan makes the branch skip an
+action every clean continuation takes). **Amendment 2** added the omission rule (v3) and a stopping rule: if `used`
+fails on a third fresh sample, all `used`-based claims are withdrawn.
+
+**Round 3** (fresh sample, seed 2028; `audit_agreement_r3_v3.md`): bad 33/36 (0.92), bad without task 9 33/33, used
+33/36 (0.92), fault-caused irreversible 36/36, per-call dependence 67/68. All labels meet the threshold, so the
+`used`-based claims are kept under the stopping rule.
+
+**All rounds pooled** (`data/audit/audit_summary.md`, Wilson 95% intervals; rounds 1–2 were used to develop the fixes,
+so pooled v3 values are optimistic):
+
+| Label | v1 | v3 |
+|---|---|---|
+| bad | 95/108 = 0.88 [0.80, 0.93] | 96/108 = 0.89 [0.82, 0.94] |
+| bad without `banking.user_task_9` | 93/97 = 0.96 | 94/97 = 0.97 [0.91, 0.99] |
+| used | 92/108 = 0.85 [0.77, 0.91] | 94/108 = 0.87 [0.79, 0.92] |
+| fault-caused irreversible | 106/108 = 0.98 | 106/108 = 0.98 [0.93, 0.99] |
+| per-call dependence | 186/187 = 0.995 | 186/187 = 0.995 [0.97, 1.00] |
+
+Reading: round 3 passes, but v1 also reaches 33/36 on round 3, so the difference between label versions is within
+sampling variation at n=36 per round. Headline claims are therefore based on Δ (bad), fault-caused irreversibility and
+per-call dependence (pooled agreement >= 0.97 without task 9); `used`-based shares are secondary.
+
+**Who audited.** All three rounds were automated trace audits (no human auditor), given only the raw traces and the instructions in
+`data/audit/README.md`; no human audit has been done. A human audit of at least 30 branches is required before these
+agreement rates are reported as a manual audit.
 
 **3.4 Checker finding.** On `banking.user_task_9`, 116 of 138 utility passes in main have no successful executor write
 (fault and clean runs combined). The task's check accepts an unchanged environment. All headline numbers will be
@@ -123,8 +149,8 @@ candidate pool; the 15 tasks below 1/3 cannot be measured with this model becaus
 
 ## 5. Statistics (pre-registration V6)
 
-`analysis/phase1_stats.py`, `data/tables/stats/headline_comparisons.csv` (v1 labels; v2 and without-task-9 reruns
-PENDING). Paired cluster bootstrap over 14 tasks, 10,000 resamples, Holm adjustment over 14 comparisons.
+`analysis/phase1_stats.py`, `data/tables/stats/headline_comparisons.csv` (v3 labels) and
+`data/tables/stats_without_banking9/headline_comparisons.csv` (same conclusions). Paired cluster bootstrap over 14 tasks, 10,000 resamples, Holm adjustment over 14 comparisons.
 
 Distinguishable after adjustment (6 Δ / family comparisons, plus 2 recovery): Δ bad for both families and modes;
 adversarial − accidental P(propagated | dependent) in both modes; R1 − R0 utility (accidental, +0.27); R3 − R0 residual
