@@ -49,5 +49,5 @@ echo "[$M] verify + restart $(date +%T)"
 V=$!
 "${RUN[@]}" restart --model "$M" --src "main_$E" --exp "restart_$E" > "logs/restart_$E.out" 2>&1 || echo "[$E] restart exit $?"
 wait "$V" || echo "[$E] verify exit $?"
-tail -1 "logs/verify_$E.out" "logs/restart_$E.out"
+tail -q -n 1 "logs/verify_$E.out" "logs/restart_$E.out" || true
 echo "[$E] done $(date +%T)" | tee "logs/suite_$E.done"
