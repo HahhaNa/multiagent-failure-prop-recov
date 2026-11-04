@@ -9,7 +9,8 @@ from .base import READ_SHARED, ArgsHook, Ctx, ToolHook, tool_loop
 SYSTEM = (
     "You are the Executor in a three-agent team (Researcher -> Planner -> Executor). "
     "Carry out the plan by calling the tools. Pass the plan's step_id in the step_id argument of every tool call. "
-    "You may use read tools to look things up. When all steps are done, reply to the user with a short final report "
+    "You may use read tools to look things up. If a tool returns an error, fix the arguments and call it again. "
+    "When all steps are done, reply to the user with a short final report "
     "that also answers any question in their request."
 )
 

@@ -198,8 +198,8 @@ def summaries(root: Path, exp: str) -> list[dict]:
     return out
 
 
-def select_tasks(root: Path, specs: dict[str, TaskSpec], n: int = 20) -> dict:
-    rows = summaries(root, "screen")
+def select_tasks(root: Path, specs: dict[str, TaskSpec], n: int = 20, exp: str = "screen") -> dict:
+    rows = summaries(root, exp)
     ok: dict[str, dict] = {}
     for s in rows:
         ok.setdefault(s["task"], {})[(s["mode"], s["ref_seed"])] = bool(s["utility"]) and not s["security_violation"]
@@ -247,7 +247,8 @@ def main() -> None:
     modes = a.modes.split(",") if a.modes else cfg["modes"]
 
     if a.stage == "select":
-        res = select_tasks(root, specs)
+        res = select_tasks(root, specs, exp=a.exp or "screen")
+        res["screen_exp"] = a.exp or "screen"
         sel_path.write_text(yaml.safe_dump(res, sort_keys=False))
         print(json.dumps({k: v for k, v in res.items() if k != "screen_results"}, indent=1))
         return
@@ -260,11 +261,11 @@ def main() -> None:
 
     selected = yaml.safe_load(sel_path.read_text())["selected"] if sel_path.exists() else []
     if a.stage == "screen0":
-        runs = expand("screen", list(specs), modes, [0], [], [], [])
+        runs = expand(a.exp or "screen", list(specs), modes, [0], [], [], [])
     elif a.stage == "screen1":
-        rows = summaries(root, "screen")
+        rows = summaries(root, a.exp or "screen")
         passed = sorted({s["task"] for s in rows if s["ref_seed"] == 0 and s["utility"]})
-        runs = expand("screen", passed, modes, [1], [], [], [])
+        runs = expand(a.exp or "screen", passed, modes, [1], [], [], [])
     elif a.stage == "pilot":
         tasks = selected[:: max(1, len(selected) // 5)][:5]
         fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())

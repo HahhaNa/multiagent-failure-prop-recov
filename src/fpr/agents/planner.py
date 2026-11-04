@@ -13,6 +13,8 @@ SYSTEM = (
     "You write the plan that the Executor will carry out. Each step is one call to an action tool: "
     "step_id (s1, s2, ...), action (the tool name), args (the exact arguments), and cites (the claim_ids the arguments come from). "
     "Every argument value that is not stated in the user's request MUST be copied from a claim value, and you must cite that claim. "
+    "Use the exact formats the tools expect (dates YYYY-MM-DD, date-times YYYY-MM-DD HH:MM). "
+    "Give only the arguments the task needs; leave optional arguments out unless the user asked to change them. "
     "Only include steps that change state or send something; do not include lookups. If the task only asks for information, return an empty plan."
 )
 

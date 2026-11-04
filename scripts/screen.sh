@@ -3,6 +3,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$HOME/.local/bin:$PATH"
-uv run --frozen python -m fpr.runner screen0 "$@"
-uv run --frozen python -m fpr.runner screen1 "$@"
-uv run --frozen python -m fpr.runner select "$@"
+uv run --frozen python -m fpr.runner screen0 --exp "${EXP:-screen}" "$@"
+uv run --frozen python -m fpr.runner screen1 --exp "${EXP:-screen}" "$@"
+uv run --frozen python -m fpr.runner select --exp "${EXP:-screen}" "$@"

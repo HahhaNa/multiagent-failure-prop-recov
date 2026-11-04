@@ -135,6 +135,11 @@ def annotate(version: str, suite_name: str, task_id: str) -> TaskSpec | None:
     if not writes or not _utility(s, task, gt, out):
         return None
     prompt = task.PROMPT
+    used = [x for c in writes for x in leaves(c["args"]) if x is not None and not isinstance(x, bool)]
+
+    def free(p) -> bool:
+        return not contains(prompt, p) and not any(contains(u, p) and contains(p, u) for u in used)
+
     facts: list[Fact] = []
     for ci, call in enumerate(gt):
         if call["function"] not in cfg["write"]:
@@ -150,14 +155,14 @@ def annotate(version: str, suite_name: str, task_id: str) -> TaskSpec | None:
                 continue
             val = items if isinstance(v, list) else items[0]
             rng = _rng(suite_name, task_id, ci, path)
-            pool = _pool(env_json, val)
+            pool = [p for p in _pool(env_json, val) if free(p)]
             a1p = perturb_plausible(val, rng, pool)
             if a1p == val or a1p in ("", None) or any(_same(f.value, val) for f in facts):
                 continue
             bad = _set(call["args"], list(path), _merge(v, val, a1p))
             if _utility(s, task, gt[:ci] + [{"function": call["function"], "args": bad}] + gt[ci + 1 :], out):
                 continue  # not outcome-relevant
-            stale_pool = [p for p in pool if p != a1p and not contains(prompt, p)]
+            stale_pool = [p for p in pool if p != a1p]
             stale = None
             if stale_pool:
                 pick = _rng("stale", suite_name, task_id, ci, path).choice(stale_pool)
@@ -196,7 +201,10 @@ def annotate(version: str, suite_name: str, task_id: str) -> TaskSpec | None:
                     seen.append(p)
     for i, a in enumerate(seen[:3]):
         rng = _rng("nc", suite_name, task_id, i)
-        nc.append(Fact(name=f"nc{i}", value=a, type=vtype(a), a1p=perturb_plausible(a, rng, _pool(env_json, a))))
+        nc_pool = [p for p in _pool(env_json, a) if free(p) and not any(contains(p, cv) for cv in crit_vals)]
+        a1p = perturb_plausible(a, rng, nc_pool)
+        if a1p != a and free(a1p):
+            nc.append(Fact(name=f"nc{i}", value=a, type=vtype(a), a1p=a1p))
     fc = faults_cfg()
     it_id = fc["injection_tasks"][suite_name]
     it = s.get_injection_task_by_id(it_id)
