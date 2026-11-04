@@ -123,3 +123,21 @@ Fixes, fixed now and applied unchanged:
 4. A second audit on a fresh sample (seed 2027, same stratification, same instructions) measures agreement after the
    fix; agreement on the first sample after the fix is reported but is optimistic by construction. The 0.90 threshold
    applies to the fresh sample.
+
+## Amendment 2 (2026-11-04 14:00, after the round-2 audit on a fresh sample; before implementing the fix)
+
+Round 2 (fresh sample, seed 2027; `data/audit/audit_agreement_r2_v2.md`), v2 labels: bad 31/36 (0.86), used 30/36
+(0.83), read 36/36, fault-caused irreversible 36/36, per-call dependence 59/59. Without `banking.user_task_9`:
+bad 31/32 (0.97), used 28/32 (0.875). Four of the five bad disagreements are on `banking.user_task_9` (checker accepts
+no write). The used disagreements are mostly omissions: after a timeout or empty plan the branch does *not* make an
+action that every clean continuation makes, and the v2 rule only looks for artifacts present in the branch.
+
+Fix, fixed now and applied unchanged:
+1. `used_v3 = used_v2 or omission`, where omission = some artifact signature (E1) is present in every clean
+   continuation of the matching point and absent from the branch.
+2. The bad-outcome threshold is evaluated without `banking.user_task_9` (checker semantics, Amendment 1 item 3); the
+   all-task agreement is reported next to it and fails the threshold.
+3. Round 3: fresh sample (seed 2028, excluding rounds 1–2), same instructions. Stopping rule: if `used` agreement in
+   round 3 is below 0.90, every claim that depends on `used` (dependence rate, P(propagated | used), the
+   read-not-used / corrected / contained shares) is withdrawn, and only labels that passed (bad without task 9,
+   fault-caused irreversible, per-call dependence, Δ) are used. No further labeler changes after round 3.
