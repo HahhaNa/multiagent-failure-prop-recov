@@ -135,6 +135,24 @@ def artifact_rows(df: pd.DataFrame, ext: dict[str, dict]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def omissions(df: pd.DataFrame, ext: dict[str, dict]) -> pd.DataFrame:
+    """Per injected branch: artifact signatures present in every clean continuation of its point but absent from it."""
+    inter: dict[tuple, dict[str, set]] = {}
+    for key, g in df[df.kind.isin(["clean", "ref"])].groupby(["task", "mode", "point_c"]):
+        sets = [ext[rd] for rd in g.run_dir]
+        inter[key] = {k: set.intersection(*[{a["sig"] for a in x[k]} for x in sets]) for k in ("claims", "steps", "calls")}
+    rows = []
+    for _, r in df[(df.kind == "fault") & df.injected].iterrows():
+        u = inter.get((r.task, r["mode"], CLEAN_FOR.get(r.point) or "R.start"))
+        if u is None:
+            continue
+        x = ext[r.run_dir]
+        miss = {k: len(u[k] - {a["sig"] for a in x[k]}) for k in u}
+        rows.append({"task": r.task, "mode": r["mode"], "fault": r.fault, "branch_seed": r.branch_seed, "n_omitted": sum(miss.values()),
+                     **{f"omitted_{k}": v for k, v in miss.items()}})
+    return pd.DataFrame(rows)
+
+
 def prf(t: pd.DataFrame, col: str) -> dict:
     tp = int((t[col] & t.dependent).sum())
     fp = int((t[col] & ~t.dependent).sum())
@@ -216,6 +234,7 @@ def main() -> None:
     ext_ok = {n for s in tools.values() for n, v in s.get("write", {}).items() if v.get("external")} | {n for s in tools.values() for n in s.get("read_external", [])}
     d = out_dir(f"tables/{a.exp}")
     arts.to_csv(d / "cf_artifacts.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
+    omissions(df, ext).to_csv(d / "cf_omissions.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
     tables = {
         "graph_accuracy": graph_accuracy(arts, []),
         "graph_accuracy_family": graph_accuracy(arts, ["family"]),

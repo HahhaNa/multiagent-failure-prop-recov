@@ -98,7 +98,7 @@ not distinguishable.
 R3 with the verifier served by a different model family than the agents. Constraint: the harness serves one model at a
 time on one 16 GB GPU; options are in the revised plan.
 
-## Amendment 1 (2026-11-04 13:30, after the first V4 audit; before any fix was implemented)
+## Amendment 1 (2026-11-04, committed in da7e18a, after the first V4 audit; before any fix was implemented)
 
 First audit (36 branches, `data/audit/audit_agreement.md`): bad 31/36 (0.86), read 36/36, used 29/36 (0.81),
 fault-caused irreversible 34/36 (0.94), per-call dependence 60/60. Two labels fail the 0.90 threshold.
@@ -124,7 +124,7 @@ Fixes, fixed now and applied unchanged:
    fix; agreement on the first sample after the fix is reported but is optimistic by construction. The 0.90 threshold
    applies to the fresh sample.
 
-## Amendment 2 (2026-11-04 14:00, after the round-2 audit on a fresh sample; before implementing the fix)
+## Amendment 2 (2026-11-04, committed in bfc5f92, after the round-2 audit on a fresh sample; before implementing the fix)
 
 Round 2 (fresh sample, seed 2027; `data/audit/audit_agreement_r2_v2.md`), v2 labels: bad 31/36 (0.86), used 30/36
 (0.83), read 36/36, fault-caused irreversible 36/36, per-call dependence 59/59. Without `banking.user_task_9`:

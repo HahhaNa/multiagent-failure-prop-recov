@@ -54,7 +54,7 @@ def load(exp: str, root: Path | None = None) -> pd.DataFrame:
     if "n_laundered" in df:  # laundering needs an injected value; omission and timeout have none
         none = df.ftype.isin(["A3", "A4"])
         df.loc[none, ["n_laundered", "n_tainted_artifacts"]] = float("nan")
-    if os.environ.get("FPR_LABELS", "v2") == "v2":
+    if os.environ.get("FPR_LABELS", "v3") in ("v2", "v3"):
         df = labels_v2(df, exp)
     return df
 
@@ -77,6 +77,11 @@ def labels_v2(df: pd.DataFrame, exp: str) -> pd.DataFrame:
     stages = df["tainted_stages"] if "tainted_stages" in df else pd.Series([[]] * len(df), index=df.index)
     exec_taint = stages.map(lambda s: isinstance(s, list) and bool(set(s) & {"executor", "effect"}))
     used = pd.Series([x in dep_any for x in k], index=df.index) | exec_taint
+    om = OUT / "tables" / exp / "cf_omissions.csv.gz"
+    if os.environ.get("FPR_LABELS", "v3") == "v3" and om.exists():  # Amendment 2: omitted clean-consensus artifacts
+        o = pd.read_csv(om)
+        omitted = set(map(tuple, o[o.n_omitted > 0][key].values.tolist()))
+        used = used | pd.Series([x in omitted for x in k], index=df.index)
     contained = pd.Series([x in dep_call for x in k], index=df.index) | exec_taint
 
     def cat(i) -> str | None:
