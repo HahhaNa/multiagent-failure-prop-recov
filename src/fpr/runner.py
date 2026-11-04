@@ -269,6 +269,7 @@ def main() -> None:
     ap.add_argument("--core-only", action="store_true")
     ap.add_argument("--modes", default="")
     ap.add_argument("--exp", default="")
+    ap.add_argument("--src", default="main", help="restart: faulted experiment to recover")
     a = ap.parse_args()
     cfg = load_cfg()
     root = runs_root(cfg)
@@ -313,10 +314,11 @@ def main() -> None:
     elif a.stage == "verify":
         fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
         k = a.k or 5
-        runs = expand(a.exp or "verify", selected, modes, cfg["ref_seeds"][:k], conditions(include_controls=True), fc["clean_points"], cfg["branch_seeds"][:k])
+        conds = [c for c in conditions(include_controls=not a.core_only) if c.core or not a.core_only]
+        runs = expand(a.exp or "verify", selected, modes, cfg["ref_seeds"][:k], conds, fc["clean_points"], cfg["branch_seeds"][:k])
     elif a.stage == "restart":
         core = [c.id for c in conditions() if c.core] if a.core_only else None
-        runs = restart_matrix(root, "main", a.exp or "restart", core)
+        runs = restart_matrix(root, a.src, a.exp or "restart", core)
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:
