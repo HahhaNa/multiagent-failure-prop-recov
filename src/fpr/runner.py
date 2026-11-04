@@ -1,0 +1,289 @@
+"""Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
+
+Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
+Stages: screen0 screen1 select pilot gonogo primary cross status
+"""
+
+import argparse
+import asyncio
+import hashlib
+import importlib.metadata as md
+import json
+import os
+import subprocess
+import time
+import traceback
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+
+import yaml
+
+from .env.agentdojo_adapter import ROOT
+from .faults.spec import FaultSpec, clean_point, conditions
+from .llm.cache import CachedLLM, DiskCache
+from .llm.client import OpenAIClient
+from .orchestrator import Episode, EpisodeConfig
+from .tasks import TaskSpec, load_specs
+
+
+@dataclass(frozen=True)
+class RunSpec:
+    exp: str
+    task: str
+    mode: str
+    fault: str | None
+    ref_seed: int
+    branch_seed: int
+
+    @property
+    def name(self) -> str:
+        return f"ref_s{self.ref_seed}" if self.fault is None else f"{self.fault}_b{self.branch_seed}"
+
+    def path(self, root: Path) -> Path:
+        return root / self.exp / self.task / self.mode / self.name
+
+
+def load_cfg() -> dict:
+    return yaml.safe_load((ROOT / "configs/phase1.yaml").read_text())
+
+
+def runs_root(cfg: dict) -> Path:
+    return Path(os.path.expanduser(os.environ.get("FPR_RUNS", cfg["runs_root"])))
+
+
+def config_hash() -> str:
+    h = hashlib.sha1()
+    for p in sorted((ROOT / "configs").glob("*.yaml")):
+        h.update(p.name.encode() + p.read_bytes())
+    return h.hexdigest()[:12]
+
+
+def _sh(cmd: str) -> str:
+    try:
+        return subprocess.run(cmd, check=False, shell=True, capture_output=True, text=True, cwd=ROOT, timeout=20).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def base_manifest(cfg: dict, model_alias: str) -> dict:
+    models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
+    m = models.get(model_alias, {})
+    serve = ROOT / "logs/serve_cmd.txt"
+    return {
+        "git_commit": _sh("git rev-parse HEAD"),
+        "git_dirty": bool(_sh("git status --porcelain --untracked-files=no")),
+        "config_hash": config_hash(),
+        "model_alias": model_alias,
+        "model_repo": m.get("repo"),
+        "model_revision": m.get("revision"),
+        "quantization": m.get("quantization"),
+        "vllm_version": md.version("vllm"),
+        "agentdojo_version": md.version("agentdojo"),
+        "benchmark_version": cfg["benchmark_version"],
+        "driver_version": _sh("nvidia-smi --query-gpu=driver_version --format=csv,noheader"),
+        "cuda_version": _sh("nvidia-smi | grep -o 'CUDA Version: [0-9.]*' | cut -d' ' -f3"),
+        "serve_command": serve.read_text().strip() if serve.exists() else None,
+        "temperature": cfg["temperature"],
+    }
+
+
+# ---------- matrix ----------
+
+
+def expand(exp: str, tasks: list[str], modes: list[str], ref_seeds: list[int], conds: list[FaultSpec], clean_pts: list[str], branch_seeds: list[int]) -> list[RunSpec]:
+    out = []
+    for t in tasks:
+        for m in modes:
+            out += [RunSpec(exp, t, m, None, s, s) for s in ref_seeds]
+            for c in conds:
+                if m in c.modes:
+                    out += [RunSpec(exp, t, m, c.id, 0, b) for b in branch_seeds]
+            for p in clean_pts:
+                out += [RunSpec(exp, t, m, clean_point(p).id, 0, b) for b in branch_seeds]
+    return out
+
+
+def primary_matrix(tasks: list[str], k: int = 3, core_only: bool = False, modes: list[str] | None = None, exp: str = "primary") -> list[RunSpec]:
+    cfg = load_cfg()
+    fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
+    conds = [c for c in conditions() if c.core or not core_only]
+    return expand(exp, tasks, modes or cfg["modes"], cfg["ref_seeds"][:k], conds, fc["clean_points"], cfg["branch_seeds"][:k])
+
+
+# ---------- execution ----------
+
+
+class Runner:
+    def __init__(self, llm, cfg: dict, specs: dict[str, TaskSpec], model_alias: str, model_name: str, concurrency: int, root: Path):
+        self.llm, self.cfg, self.specs = llm, cfg, specs
+        self.model_alias, self.model_name = model_alias, model_name
+        self.root = root
+        self.sem = asyncio.Semaphore(concurrency)
+        self.manifest = base_manifest(cfg, model_alias)
+        self.stats = {"done": 0, "skipped": 0, "failed": 0, "live_calls": 0, "t0": time.time()}
+        self.executed: list[str] = []
+
+    def is_done(self, r: RunSpec) -> bool:
+        return (r.path(self.root) / "DONE").exists()
+
+    def _prepare_dir(self, d: Path) -> None:
+        if d.exists():  # leftover from a crashed or failed attempt: keep it, labeled
+            n = 0
+            while d.with_name(f"{d.name}.incomplete{n}").exists():
+                n += 1
+            d.rename(d.with_name(f"{d.name}.incomplete{n}"))
+        d.mkdir(parents=True)
+
+    async def run_one(self, r: RunSpec) -> dict | None:
+        if self.is_done(r):
+            self.stats["skipped"] += 1
+            return None
+        async with self.sem:
+            d = r.path(self.root)
+            self._prepare_dir(d)
+            c = self.cfg
+            ec = EpisodeConfig(
+                spec=self.specs[r.task], mode=r.mode, fault_id=r.fault, ref_seed=r.ref_seed, branch_seed=r.branch_seed,
+                model=self.model_name, temperature=c["temperature"], max_tokens=c["max_tokens"], version=c["benchmark_version"],
+                turns=c["turns"], clock=c["clock"], tool_output_chars=c["tool_output_chars"], expect_replay=r.fault is not None,
+            )
+            man = {**self.manifest, "run": r.__dict__, "seed": r.ref_seed, "branch_seed": r.branch_seed, "start": datetime.now().isoformat()}
+            (d / "manifest.json").write_text(json.dumps(man, indent=1))
+            try:
+                s = await Episode(ec, self.llm, d).run()
+            except Exception:  # noqa: BLE001 - harness bug: keep the run dir, labeled FAILED
+                (d / "FAILED").write_text(traceback.format_exc())
+                self.stats["failed"] += 1
+                return None
+            man["end"] = datetime.now().isoformat()
+            (d / "manifest.json").write_text(json.dumps(man, indent=1))
+            (d / "DONE").write_text(man["end"])
+            self.stats["done"] += 1
+            self.stats["live_calls"] += s["n_live_calls"]
+            self.executed.append(str(d))
+            return s
+
+    async def run_all(self, runs: list[RunSpec], log: Path | None = None) -> None:
+        refs = [r for r in runs if r.fault is None]
+        branches = [r for r in runs if r.fault is not None]
+        for phase in (refs, branches):  # branches replay the seed-0 reference prefix
+            tasks = [asyncio.create_task(self.run_one(r)) for r in phase]
+            for n, fut in enumerate(asyncio.as_completed(tasks), 1):
+                await fut
+                if log and (n % 20 == 0 or n == len(tasks)):
+                    self.log_progress(log, len(runs))
+
+    def throughput(self) -> float:
+        h = max((time.time() - self.stats["t0"]) / 3600, 1e-9)
+        return self.stats["live_calls"] / 12 / h
+
+    def log_progress(self, log: Path, total: int) -> None:
+        row = {**self.stats, "total": total, "now": datetime.now().isoformat(), "run_eq_per_h": round(self.throughput(), 1)}
+        with open(log, "a") as f:
+            f.write(json.dumps(row) + "\n")
+        print(json.dumps(row), flush=True)
+
+
+# ---------- stages ----------
+
+
+def summaries(root: Path, exp: str) -> list[dict]:
+    out = []
+    for p in sorted((root / exp).glob("*/*/*/summary.json")):
+        if (p.parent / "DONE").exists():
+            s = json.loads(p.read_text())
+            s["run_dir"] = str(p.parent)
+            out.append(s)
+    return out
+
+
+def select_tasks(root: Path, specs: dict[str, TaskSpec], n: int = 20) -> dict:
+    rows = summaries(root, "screen")
+    ok: dict[str, dict] = {}
+    for s in rows:
+        ok.setdefault(s["task"], {})[(s["mode"], s["ref_seed"])] = bool(s["utility"]) and not s["security_violation"]
+    full = [t for t, v in ok.items() if all(v.get((m, k)) for m in ("message", "state") for k in (0, 1))]
+    partial = sorted((t for t in ok if t not in full and sum(ok[t].values()) >= 3), key=lambda t: -sum(ok[t].values()))
+    by_suite: dict[str, list[str]] = {}
+    for t in [t for t in specs if t in full]:
+        by_suite.setdefault(t.split(".")[0], []).append(t)
+    chosen: list[str] = []
+    while len(chosen) < n and any(by_suite.values()):
+        for s in list(by_suite):
+            if by_suite[s] and len(chosen) < n:
+                chosen.append(by_suite[s].pop(0))
+    fill = [t for t in partial][: max(0, n - len(chosen))]
+    return {"selected": chosen + fill, "full_pass": sorted(full), "filled_from_partial": fill, "screen_results": {t: {f"{m}_s{k}": v for (m, k), v in d.items()} for t, d in ok.items()}}
+
+
+def make_llm(args, cfg, specs):
+    cache = DiskCache(runs_root(cfg) / "cache" / ("mock" if args.mock else args.model))
+    if args.mock:
+        from .llm.mock import MockLLM
+
+        return CachedLLM(MockLLM(specs), cache, "record"), "mock"
+    models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
+    return CachedLLM(OpenAIClient(concurrency=cfg["concurrency"]), cache, "record"), models[args.model]["repo"]
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("stage")
+    ap.add_argument("--model", default="qwen3-8b")
+    ap.add_argument("--mock", action="store_true")
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--k", type=int, default=3)
+    ap.add_argument("--core-only", action="store_true")
+    ap.add_argument("--modes", default="")
+    ap.add_argument("--exp", default="")
+    a = ap.parse_args()
+    cfg = load_cfg()
+    root = runs_root(cfg)
+    if a.mock:
+        root = root / "mock"
+    specs = load_specs(ROOT / "configs/tasks_candidates.yaml")
+    sel_path = root / "tasks_selected.yaml" if a.mock else ROOT / "configs/tasks_selected.yaml"
+    modes = a.modes.split(",") if a.modes else cfg["modes"]
+
+    if a.stage == "select":
+        res = select_tasks(root, specs)
+        sel_path.write_text(yaml.safe_dump(res, sort_keys=False))
+        print(json.dumps({k: v for k, v in res.items() if k != "screen_results"}, indent=1))
+        return
+    if a.stage == "status":
+        for exp in sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "cache"):
+            n_done = len(list((root / exp).glob("*/*/*/DONE")))
+            n_fail = len(list((root / exp).glob("*/*/*/FAILED")))
+            print(exp, "done", n_done, "failed", n_fail)
+        return
+
+    selected = yaml.safe_load(sel_path.read_text())["selected"] if sel_path.exists() else []
+    if a.stage == "screen0":
+        runs = expand("screen", list(specs), modes, [0], [], [], [])
+    elif a.stage == "screen1":
+        rows = summaries(root, "screen")
+        passed = sorted({s["task"] for s in rows if s["ref_seed"] == 0 and s["utility"]})
+        runs = expand("screen", passed, modes, [1], [], [], [])
+    elif a.stage == "pilot":
+        tasks = selected[:: max(1, len(selected) // 5)][:5]
+        fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
+        runs = expand("pilot", tasks, modes, [0], conditions(include_controls=True), fc["clean_points"], [cfg["branch_seeds"][0]])
+    elif a.stage == "primary":
+        runs = primary_matrix(selected, k=a.k, core_only=a.core_only, modes=modes, exp=a.exp or "primary")
+    elif a.stage == "cross":
+        runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
+    else:
+        raise SystemExit(f"unknown stage {a.stage}")
+    if a.limit:
+        runs = runs[: a.limit]
+    llm, model_name = make_llm(a, cfg, specs)
+    r = Runner(llm, cfg, specs, "mock" if a.mock else a.model, model_name, cfg["concurrency"], root)
+    (root / "logs").mkdir(parents=True, exist_ok=True)
+    print(f"{a.stage}: {len(runs)} runs, {sum(1 for x in runs if r.is_done(x))} already done", flush=True)
+    asyncio.run(r.run_all(runs, root / "logs" / f"{a.stage}.progress.jsonl"))
+    print("finished", json.dumps(r.stats), flush=True)
+
+
+if __name__ == "__main__":
+    main()

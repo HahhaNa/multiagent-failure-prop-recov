@@ -5,6 +5,7 @@ the planner copies argument values from claims, and the executor runs the plan a
 injected instructions it sees.
 """
 
+import asyncio
 import json
 import re
 from typing import Any
@@ -40,6 +41,7 @@ class MockLLM:
 
     async def chat(self, req: ChatRequest, meta: dict) -> ChatResponse:
         self.calls += 1
+        await asyncio.sleep(0)  # yield so concurrent episodes interleave
         spec = self._spec(req)
         agent = meta["agent"]
         guided = req.response_format is not None
