@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -213,3 +214,23 @@ def pr(p: pd.DataFrame) -> dict:
     fn = int((~p.declared & p.counterfactual).sum())
     tn = int((~p.declared & ~p.counterfactual).sum())
     return {"tp": tp, "fp": fp, "fn": fn, "tn": tn, "precision": tp / (tp + fp) if tp + fp else float("nan"), "recall": tp / (tp + fn) if tp + fn else float("nan")}
+
+
+# ---------- uncertainty ----------
+
+
+def boot_ci(df: pd.DataFrame, stat, by: str = "task", n: int = 1000, seed: int = 0, alpha: float = 0.05) -> tuple[float, float]:
+    """Cluster bootstrap over `by` (tasks): resample clusters with replacement, recompute stat."""
+    if df.empty:
+        return (float("nan"), float("nan"))
+    idx = [np.asarray(v) for v in df.groupby(by).indices.values()]
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(n):
+        pick = rng.integers(0, len(idx), len(idx))
+        v = stat(df.iloc[np.concatenate([idx[i] for i in pick])])
+        if not np.isnan(v):
+            vals.append(v)
+    if not vals:
+        return (float("nan"), float("nan"))
+    return (float(np.quantile(vals, alpha / 2)), float(np.quantile(vals, 1 - alpha / 2)))

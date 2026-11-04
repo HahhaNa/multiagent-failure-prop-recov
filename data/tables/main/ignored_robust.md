@@ -1,0 +1,24 @@
+| family      | point   | mode    |   n |   no_dependence |   read_not_used |   corrected |   contained |   propagated_failure |   propagated_harm |   stall |
+|:------------|:--------|:--------|----:|----------------:|----------------:|------------:|------------:|---------------------:|------------------:|--------:|
+| accidental  | E.tool  | message |  50 |            0.00 |            0.00 |        0.20 |        0.40 |                 0.40 |              0.00 |    0.00 |
+| accidental  | E.tool  | state   |  40 |            0.00 |            0.00 |        0.28 |        0.47 |                 0.25 |              0.00 |    0.00 |
+| accidental  | P.out   | message |  60 |            0.00 |            0.00 |        0.25 |        0.17 |                 0.50 |              0.08 |    0.00 |
+| accidental  | P.out   | state   |  55 |            0.00 |            0.00 |        0.18 |        0.27 |                 0.55 |              0.00 |    0.00 |
+| accidental  | P.start | message |  70 |            0.00 |            0.00 |        0.60 |        0.00 |                 0.33 |              0.00 |    0.07 |
+| accidental  | P.start | state   |  70 |            0.00 |            0.00 |        0.37 |        0.00 |                 0.61 |              0.00 |    0.01 |
+| accidental  | R.out   | message | 245 |            0.00 |            0.00 |        0.33 |        0.15 |                 0.39 |              0.10 |    0.03 |
+| accidental  | R.out   | state   | 245 |            0.00 |            0.05 |        0.15 |        0.16 |                 0.56 |              0.03 |    0.05 |
+| accidental  | R.start | message |  70 |            0.00 |            0.00 |        0.73 |        0.00 |                 0.20 |              0.00 |    0.07 |
+| accidental  | R.start | state   |  70 |            0.00 |            0.00 |        0.56 |        0.00 |                 0.44 |              0.00 |    0.00 |
+| accidental  | R.tool  | message |  65 |            0.00 |            0.02 |        0.34 |        0.14 |                 0.43 |              0.08 |    0.00 |
+| accidental  | R.tool  | state   |  65 |            0.00 |            0.00 |        0.26 |        0.14 |                 0.60 |              0.00 |    0.00 |
+| accidental  | S.write | state   |  55 |            0.00 |            0.05 |        0.20 |        0.18 |                 0.55 |              0.00 |    0.02 |
+| adversarial | E.tool  | message |  70 |            0.00 |            0.21 |        0.00 |        0.01 |                 0.07 |              0.70 |    0.00 |
+| adversarial | E.tool  | state   |  70 |            0.00 |            0.10 |        0.00 |        0.00 |                 0.00 |              0.83 |    0.07 |
+| adversarial | P.out   | message |  70 |            0.00 |            0.00 |        0.00 |        0.00 |                 0.00 |              1.00 |    0.00 |
+| adversarial | P.out   | state   |  70 |            0.00 |            0.11 |        0.00 |        0.00 |                 0.01 |              0.87 |    0.00 |
+| adversarial | R.out   | message | 135 |            0.00 |            0.11 |        0.11 |        0.10 |                 0.25 |              0.41 |    0.01 |
+| adversarial | R.out   | state   | 135 |            0.00 |            0.07 |        0.10 |        0.16 |                 0.24 |              0.42 |    0.01 |
+| adversarial | R.tool  | message |  60 |            0.00 |            0.32 |        0.05 |        0.00 |                 0.23 |              0.40 |    0.00 |
+| adversarial | R.tool  | state   |  60 |            0.00 |            0.30 |        0.05 |        0.00 |                 0.28 |              0.33 |    0.03 |
+| adversarial | S.write | state   |  70 |            0.00 |            0.73 |        0.00 |        0.00 |                 0.07 |              0.16 |    0.04 |

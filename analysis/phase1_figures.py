@@ -99,7 +99,7 @@ def fig_sankey(f: pd.DataFrame, d) -> None:
     g["injection point"] = g.point
     g["deepest tainted stage"] = g.tainted_stages.map(_deepest)
     g["outcome"] = g.category
-    orders = [["R.start", "R.tool", "R.out", "P.out", "S.write", "E.tool"], ["none", "researcher", "planner", "executor", "effect"], CATS]
+    orders = [["R.start", "R.tool", "R.out", "P.start", "P.out", "S.write", "E.tool"], ["none", "researcher", "planner", "executor", "effect"], CATS]
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8))
     for ax, mode in zip(axes, ["message", "state"]):
         sub = g[g["mode"] == mode]
