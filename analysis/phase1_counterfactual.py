@@ -156,29 +156,35 @@ def graph_accuracy(a: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def irreversibility(a: pd.DataFrame, df: pd.DataFrame, ext_ok: set[str]) -> pd.DataFrame:
-    """Per condition x mode: share of branches with >= 1 fault-caused irreversible/compensable external effect before recovery."""
+def irreversibility(a: pd.DataFrame, df: pd.DataFrame, ext_ok: set[str], keys: list[str]) -> pd.DataFrame:
+    """Share of injected branches with >= 1 fault-caused irreversible/compensable external effect before recovery."""
     eff = a[(a.level == "call") & a.ok & a.rev.isin(["irreversible", "compensable"]) & a.name.isin(ext_ok) & a.dependent]
     f = df[(df.kind == "fault") & df.injected]
+    bk = ["task", "mode", "fault", "branch_seed"]
+    firsts = eff.sort_values("steps").groupby(bk).first()
+    kinds = eff.groupby(bk).rev.agg(set)
+    f = f.assign(fc=[k in firsts.index for k in zip(f.task, f["mode"], f.fault, f.branch_seed)])
     rows = []
-    for (fault, mode), g in f.groupby(["fault", "mode"]):
-        e = eff[(eff.fault == fault) & (eff["mode"] == mode)]
-        firsts = e.sort_values("steps").groupby(["task", "branch_seed"]).first()
-        per = g[["task", "branch_seed"]].copy()
-        per["fc"] = [(t, b) in firsts.index for t, b in zip(per.task, per.branch_seed)]
-        lo, hi = boot_ci(per, lambda t: t.fc.mean())
+    for k, g in f.groupby(keys):
+        k = k if isinstance(k, tuple) else (k,)
+        idx = [x for x in zip(g.task, g["mode"], g.fault, g.branch_seed) if x in firsts.index]
+        fs = firsts.loc[idx] if idx else firsts.iloc[:0]
+        e = eff.merge(g[bk], on=bk)
+        lo, hi = boot_ci(g, lambda t: t.fc.mean())
         rows.append({
-            "fault": fault, "mode": mode, "family": g.family.iloc[0], "point": g.point.iloc[0], "n": len(g),
-            "share_fault_caused": per.fc.mean(), "ci_lo": lo, "ci_hi": hi,
-            "share_irreversible": e[e.rev == "irreversible"].groupby(["task", "branch_seed"]).ngroups / len(g),
-            "share_compensable": e[e.rev == "compensable"].groupby(["task", "branch_seed"]).ngroups / len(g),
-            "steps_to_first_med": float(firsts.steps.median()) if len(firsts) else np.nan,
-            "tokens_to_first_med": float(firsts.tokens.median()) if len(firsts) else np.nan,
+            **dict(zip(keys, k)), "family": g.family.iloc[0], "point": g.point.iloc[0] if g.point.nunique() == 1 else "mixed", "n": len(g),
+            "share_fault_caused": g.fc.mean(), "ci_lo": lo, "ci_hi": hi,
+            "share_irreversible": sum("irreversible" in kinds[x] for x in idx) / len(g),
+            "share_compensable": sum("compensable" in kinds[x] for x in idx) / len(g),
+            "steps_to_first_med": float(fs.steps.median()) if len(fs) else np.nan,
+            "tokens_to_first_med": float(fs.tokens.median()) if len(fs) else np.nan,
             "n_effects": len(e), "tainted": int(e.taint.sum()), "counterfactual_only": int((~e.taint).sum()),
         })
-    t = pd.DataFrame(rows)
-    t["_o"] = t.fault.map({c: i for i, c in enumerate(ordered(t.fault.unique()))})
-    return t.sort_values(["_o", "mode"]).drop(columns="_o")
+    t = pd.DataFrame(rows).loc[:, lambda x: ~x.columns.duplicated()]
+    if "fault" in keys:
+        t["_o"] = t.fault.map({c: i for i, c in enumerate(ordered(t.fault.unique()))})
+        t = t.sort_values(["_o", "mode"]).drop(columns="_o")
+    return t
 
 
 def ignored_robust(df: pd.DataFrame) -> pd.DataFrame:
@@ -214,7 +220,8 @@ def main() -> None:
         "graph_accuracy_family": graph_accuracy(arts, ["family"]),
         "graph_accuracy_family_point_mode": graph_accuracy(arts, ["family", "point", "mode"]),
         "graph_accuracy_level": graph_accuracy(arts, ["family", "level"]),
-        "irreversible_before_recovery": irreversibility(arts, df, ext_ok),
+        "irreversible_before_recovery": irreversibility(arts, df, ext_ok, ["fault", "mode"]),
+        "irreversible_by_stage": irreversibility(arts, df, ext_ok, ["family", "point", "mode"]),
         "ignored_robust": ignored_robust(df),
     }
     for name, t in tables.items():

@@ -9,6 +9,7 @@ import pandas as pd
 from common import (
     DEPENDENT,
     PROPAGATED,
+    boot_ci,
     conditions,
     load,
     ordered,
@@ -22,6 +23,14 @@ from common import (
 
 def _rate(num, den):
     return num / den if den else np.nan
+
+
+CI_STATS = {
+    "dependence": lambda t: t.category.isin(DEPENDENT).mean(),
+    "prop_given_dep": lambda t: _rate(t.category.isin(PROPAGATED).sum(), t.category.isin(DEPENDENT).sum()),
+    "delta": lambda t: t.bad.mean() - t.clean_bad.mean(),
+    "harm_rate": lambda t: (t.category == "propagated_harm").mean(),
+}
 
 
 def aggregate(f: pd.DataFrame, prov: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
@@ -39,6 +48,9 @@ def aggregate(f: pd.DataFrame, prov: pd.DataFrame, keys: list[str]) -> pd.DataFr
                 p = p[p[col] == val]
         m = pr(p) if len(p) else {"precision": np.nan, "recall": np.nan}
         ch = g[dep].channel.value_counts(normalize=True) if dep.any() else pd.Series(dtype=float)
+        cis = {}
+        for name, fn in CI_STATS.items():
+            cis[f"{name}_lo"], cis[f"{name}_hi"] = boot_ci(g, fn)
         rows.append(
             {
                 **dict(zip(keys, k)),
@@ -70,6 +82,7 @@ def aggregate(f: pd.DataFrame, prov: pd.DataFrame, keys: list[str]) -> pd.DataFr
                 "live_tokens_note": "prefix replayed from cache",
                 "wall_s": g.wall_s.mean(),
                 "virtual_s": g.virtual_s.mean(),
+                **cis,
             }
         )
     return pd.DataFrame(rows).drop(columns=["live_tokens_note"])
