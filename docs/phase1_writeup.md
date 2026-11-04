@@ -58,8 +58,8 @@ n.s.: not distinguishable after Holm adjustment (`data/tables/stats/headline_com
    [−0.03, 0.24] (message) and −0.03 [−0.12, 0.02] (state).
 4. **Dependency graphs against counterfactual dependence.** Taint precision is 0.98–0.99 and recall 0.55–0.62;
    declared ∪ taint recall is 0.72–0.73. These values change by ≤ 0.02 across three artifact-equivalence definitions;
-   recall rises with the number of clean continuations (k = 1 → 5: taint 0.49 → 0.55, adversarial), so k = 10 runs are
-   pending before the values are final.
+   recall changes by ≤ 0.008 between 5 and 10 clean continuations per branch point (pre-registered threshold 0.05), and
+   declared ∪ taint recall is 0.73–0.74 on Qwen3-14B.
 5. **Recovery.** R1 raised accidental utility by +0.27 and did not change adversarial residual harm (+0.02 [0.00,
    0.04], n.s.); it re-executed an earlier action in 16–24% of branches. R3 reduced adversarial residual harm by 0.39
    for +11% tokens; its utility differences are not distinguishable from 0, and clean success fell from 0.86 to 0.77
