@@ -23,6 +23,7 @@ from .llm.client import LLM
 from .scoring.outcome import score
 from .tasks import TaskSpec
 from .trace.events import EventLog
+from .trace.graph import build as build_graphs
 
 
 @dataclass
@@ -133,4 +134,6 @@ class Episode:
             self.log.flush()
             (self.run_dir / "artifacts.json").write_text(json.dumps(self.artifacts, indent=1, default=str))
             (self.run_dir / "summary.json").write_text(json.dumps(summary, indent=1, default=str))
+            g = build_graphs(self.log.events, self.inj.taint_values())
+            (self.run_dir / "graphs.json").write_text(json.dumps(g, default=str))
         return summary

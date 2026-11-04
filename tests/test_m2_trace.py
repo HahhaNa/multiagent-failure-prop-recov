@@ -66,3 +66,17 @@ def test_replay_zero_live_calls_identical_trace(specs, mock, tmp_path):
             assert rep.live_calls == 0 and rep.replayed_calls == s1["n_llm_calls"]
             assert json.dumps(_clean(ep1.log.events), default=str) == json.dumps(_clean(ep2.log.events), default=str)
             assert s1["utility"] == s2["utility"]
+
+
+def test_graphs_declared_and_dataflow(specs, mock):
+    from fpr.trace.graph import build
+
+    for mode in ("message", "state"):
+        ep = Episode(EpisodeConfig(spec=specs["banking.user_task_0"], mode=mode, fault_id="A1p_R", branch_seed=100), mock)
+        asyncio.run(ep.run())
+        g = build(ep.log.events, ep.inj.taint_values())
+        assert ("claim:c1", "step:s1") in g["declared"]
+        assert any(a == "step:s1" and b.startswith("tool:ecall") for a, b in g["declared"])
+        assert ("findings", "plan") in g["dataflow"]
+        assert any(a == "plan" and b.startswith("tool:ecall") for a, b in g["dataflow"])
+        assert "step:s1" in g["tainted"] and any(n.startswith("tool:ecall") for n in g["tainted"])

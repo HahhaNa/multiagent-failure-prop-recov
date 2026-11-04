@@ -1,7 +1,7 @@
 """Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
 
 Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
-Stages: screen0 screen1 select pilot gonogo primary cross status
+Stages: screen0 screen1 screen_all select pilot primary cross status
 """
 
 import argparse
@@ -204,7 +204,9 @@ def select_tasks(root: Path, specs: dict[str, TaskSpec], n: int = 20, exp: str =
     for s in rows:
         ok.setdefault(s["task"], {})[(s["mode"], s["ref_seed"])] = bool(s["utility"]) and not s["security_violation"]
     full = [t for t, v in ok.items() if all(v.get((m, k)) for m in ("message", "state") for k in (0, 1))]
-    partial = sorted((t for t in ok if t not in full and sum(ok[t].values()) >= 3), key=lambda t: -sum(ok[t].values()))
+    rate = {t: sum(v.values()) / len(v) for t, v in ok.items()}
+    # fallback when fewer than n pass 4/4: highest clean pass rate over all screening samples, at least 0.5
+    partial = sorted((t for t in ok if t not in full and rate[t] >= 0.5), key=lambda t: (-rate[t], t))
     by_suite: dict[str, list[str]] = {}
     for t in [t for t in specs if t in full]:
         by_suite.setdefault(t.split(".")[0], []).append(t)
@@ -214,7 +216,7 @@ def select_tasks(root: Path, specs: dict[str, TaskSpec], n: int = 20, exp: str =
             if by_suite[s] and len(chosen) < n:
                 chosen.append(by_suite[s].pop(0))
     fill = [t for t in partial][: max(0, n - len(chosen))]
-    return {"selected": chosen + fill, "full_pass": sorted(full), "filled_from_partial": fill, "screen_results": {t: {f"{m}_s{k}": v for (m, k), v in d.items()} for t, d in ok.items()}}
+    return {"selected": chosen + fill, "full_pass": sorted(full), "filled_from_partial": fill, "pass_rate": {t: round(rate[t], 3) for t in sorted(rate)}, "screen_results": {t: {f"{m}_s{k}": v for (m, k), v in d.items()} for t, d in ok.items()}}
 
 
 def make_llm(args, cfg, specs):
@@ -262,6 +264,8 @@ def main() -> None:
     selected = yaml.safe_load(sel_path.read_text())["selected"] if sel_path.exists() else []
     if a.stage == "screen0":
         runs = expand(a.exp or "screen", list(specs), modes, [0], [], [], [])
+    elif a.stage == "screen_all":
+        runs = expand(a.exp or "screen", list(specs), modes, [1, 2], [], [], [])
     elif a.stage == "screen1":
         rows = summaries(root, a.exp or "screen")
         passed = sorted({s["task"] for s in rows if s["ref_seed"] == 0 and s["utility"]})
@@ -282,7 +286,8 @@ def main() -> None:
     r = Runner(llm, cfg, specs, "mock" if a.mock else a.model, model_name, cfg["concurrency"], root)
     (root / "logs").mkdir(parents=True, exist_ok=True)
     print(f"{a.stage}: {len(runs)} runs, {sum(1 for x in runs if r.is_done(x))} already done", flush=True)
-    asyncio.run(r.run_all(runs, root / "logs" / f"{a.stage}.progress.jsonl"))
+    log_name = a.exp or ("screen" if a.stage.startswith("screen") else a.stage)
+    asyncio.run(r.run_all(runs, root / "logs" / f"{log_name}.progress.jsonl"))
     print("finished", json.dumps(r.stats), flush=True)
 
 

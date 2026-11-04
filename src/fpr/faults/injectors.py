@@ -150,7 +150,7 @@ class Injector:
                 source_tool_call_ids=[],
             )
             f.claims.append(note)
-            self._fire(True, target=note.claim_id, original=None, injected=self.spec.canary)
+            self._fire(True, target=note.claim_id, claims=[note.claim_id], original=None, injected=self.spec.canary)
             return f
         if self.fault.target == "noncritical":
             return self._perturb_noncritical(f)

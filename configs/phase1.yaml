@@ -6,7 +6,7 @@ ref_seeds: [0, 1, 2]
 branch_seeds: [100, 101, 102]
 modes: [message, state]
 max_tokens: 1024
-tool_output_chars: 6000
+tool_output_chars: 5000
 turns: {researcher: 8, planner: 3, executor: 10}
 clock: {stage_timeout_s: 300, prompt_tok_s: 0.0004, completion_tok_s: 0.02, tool_s: 0.05}
 concurrency: 64

@@ -19,7 +19,7 @@ FINAL = (
     "Now output your findings as JSON. Each claim states one fact needed for the task: "
     "claim_id (c1, c2, ...), text (one sentence), value (the exact value, copied verbatim from the tool output; "
     "for several values use a comma-separated list), and source_tool_call_ids (ids of the tool calls it came from). "
-    "Include one claim for every value the actions need and for every answer to a question in the user's request."
+    "Write values without surrounding quotes. Include one claim for every value the actions need and for every answer to a question in the user's request."
 )
 
 

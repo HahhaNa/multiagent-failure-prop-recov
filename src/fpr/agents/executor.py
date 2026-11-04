@@ -9,10 +9,14 @@ from .base import READ_SHARED, ArgsHook, Ctx, ToolHook, tool_loop
 SYSTEM = (
     "You are the Executor in a three-agent team (Researcher -> Planner -> Executor). "
     "Carry out the plan by calling the tools. Pass the plan's step_id in the step_id argument of every tool call. "
-    "You may use read tools to look things up. If a tool returns an error, fix the arguments and call it again. "
+    "Use read tools only when a step's arguments are missing or a call failed. If a tool returns an error, fix the arguments and call it again. "
     "When all steps are done, reply to the user with a short final report "
     "that also answers any question in their request."
 )
+
+
+NUDGES = 2
+NUDGE = "Plan steps {pending} have not been executed successfully yet. Execute them now with tool calls (pass step_id), or explain why a step is impossible."
 
 
 def with_step_id(schemas: list[dict]) -> list[dict]:
@@ -48,5 +52,17 @@ async def execute(
         tools.append(READ_SHARED)
         names = names + ["read_shared"]
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": task}]
-    report, _ = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args)
+    start = len(ctx.log.events)
+    report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args)
+    steps = [s.get("step_id") for s in (plan_json or {}).get("steps", [])] if isinstance(plan_json, dict) else []
+    if only_steps is not None:
+        steps = [s for s in steps if s in only_steps]
+    for _ in range(NUDGES):
+        done = {e.get("step_id") for e in ctx.log.events[start:] if e["kind"] == "tool_call" and e["agent"] == "executor" and e["rev"] != "none" and not e["error"]}
+        pending = [s for s in steps if s not in done]
+        if report is None or not pending:
+            break
+        ctx.log.emit("nudge", {"agent": "executor", "pending": pending})
+        messages.append({"role": "user", "content": NUDGE.format(pending=", ".join(pending))})
+        report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns // 2, on_return=on_return, on_args=on_args)
     return report
