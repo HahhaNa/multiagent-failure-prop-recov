@@ -29,6 +29,11 @@ def fault_caused(exp: str) -> pd.DataFrame:
     return pd.DataFrame({"fc_irrev": g.apply(lambda x: int((x.rev == "irreversible").sum())), "fc_comp": g.apply(lambda x: int((x.rev == "compensable").sum()))}).reset_index()
 
 
+def col(df: pd.DataFrame, name: str) -> pd.Series:
+    """Column or NaN (runs from older code lack some fields)."""
+    return df[name] if name in df else pd.Series(np.nan, index=df.index)
+
+
 def tokens(df: pd.DataFrame) -> pd.Series:
     return df.prompt_tokens + df.completion_tokens
 
@@ -38,7 +43,7 @@ def branches(root: Path, exps: dict) -> pd.DataFrame:
     d = main[(main.kind == "fault") & main.injected].copy()
     d = d.merge(fault_caused(exps["main"]), on=KEY, how="left").fillna({"fc_irrev": 0, "fc_comp": 0})
     r0 = d.assign(method="R0", utility_m=d.utility, harm_m=d.harm.astype(bool), unrec=d.fc_irrev, comp=d.fc_comp, dups=0,
-                  recomp_calls=0, recomp_tokens=0, total_tokens=tokens(d), latency=d.llm_latency_s, extra_tokens=0)
+                  recomp_calls=0, recomp_tokens=0, total_tokens=tokens(d), latency=col(d, "llm_latency_s"), extra_tokens=0)
     cols = KEY + ["family", "point", "ftype", "method", "utility_m", "harm_m", "unrec", "comp", "dups", "recomp_calls", "recomp_tokens", "total_tokens", "latency", "extra_tokens"]
     out = [r0[cols]]
     rs = load(exps["restart"], root)
@@ -46,10 +51,10 @@ def branches(root: Path, exps: dict) -> pd.DataFrame:
         rs = rs.copy()
         rs["fault"] = rs.run_dir.map(lambda p: Path(p).name.rsplit("_b", 1)[0])
         rs["branch_seed"] = rs.run_dir.map(lambda p: int(Path(p).name.rsplit("_b", 1)[1]))
-        rs = rs.drop(columns=["family", "point", "ftype"]).merge(d[KEY + ["family", "point", "ftype", "fc_irrev", "fc_comp", "prompt_tokens", "completion_tokens", "llm_latency_s"]].rename(
+        rs = rs.drop(columns=["family", "point", "ftype"]).merge(d.assign(llm_latency_s=col(d, "llm_latency_s"))[KEY + ["family", "point", "ftype", "fc_irrev", "fc_comp", "prompt_tokens", "completion_tokens", "llm_latency_s"]].rename(
             columns={"prompt_tokens": "d_pt", "completion_tokens": "d_ct", "llm_latency_s": "d_lat"}), on=KEY)
         r1 = rs.assign(method="R1", utility_m=rs.utility, harm_m=rs.residual_harm.astype(bool), unrec=rs.fc_irrev, comp=rs.fc_comp, dups=rs.duplicates,
-                       recomp_calls=rs.n_llm_calls, recomp_tokens=tokens(rs), total_tokens=tokens(rs) + rs.d_pt + rs.d_ct, latency=rs.llm_latency_s + rs.d_lat, extra_tokens=tokens(rs))
+                       recomp_calls=rs.n_llm_calls, recomp_tokens=tokens(rs), total_tokens=tokens(rs) + rs.d_pt + rs.d_ct, latency=col(rs, "llm_latency_s") + rs.d_lat, extra_tokens=tokens(rs))
         out.append(r1[cols])
     vf = load(exps["verify"], root)
     if not vf.empty:
@@ -59,7 +64,7 @@ def branches(root: Path, exps: dict) -> pd.DataFrame:
         v = v.merge(fault_caused(exps["verify"]), on=KEY, how="left").fillna({"fc_irrev": 0, "fc_comp": 0})
         v = v.merge(d[KEY], on=KEY)  # identical fault schedule: injected in both main and verify
         r3 = v.assign(method="R3", utility_m=v.utility, harm_m=v.harm.fillna(v.security_violation).astype(bool), unrec=v.fc_irrev, comp=v.fc_comp, dups=0,
-                      recomp_calls=0, recomp_tokens=0, total_tokens=tokens(v), latency=v.llm_latency_s, extra_tokens=v.verifier_tokens)
+                      recomp_calls=0, recomp_tokens=0, total_tokens=tokens(v), latency=col(v, "llm_latency_s"), extra_tokens=v.verifier_tokens)
         out.append(r3[cols])
     return pd.concat(out, ignore_index=True)
 

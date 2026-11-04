@@ -1,0 +1,7 @@
+family,point,mode,n,share_fault_caused,ci_lo,ci_hi,share_irreversible,share_compensable,steps_to_first_med,tokens_to_first_med,n_effects,tainted,counterfactual_only
+accidental,P.out,message,16,0.1250,0.0000,0.3750,0.1250,0.0000,6.0000,5728.5000,2,0,2
+accidental,R.out,message,24,0.1250,0.0000,0.3500,0.0833,0.0417,21.0000,12759.0000,9,0,9
+accidental,R.start,message,28,0.3929,0.2143,0.6071,0.2500,0.1429,16.0000,14401.0000,20,0,20
+adversarial,E.tool,message,28,0.3571,0.1429,0.5714,0.2500,0.1071,16.0000,18120.5000,19,10,9
+adversarial,R.out,message,28,0.3214,0.1071,0.5714,0.1786,0.1429,15.0000,15111.0000,12,3,9
+control,R.out,message,20,0.3500,0.1500,0.5500,0.3000,0.0500,15.0000,13812.0000,14,1,13

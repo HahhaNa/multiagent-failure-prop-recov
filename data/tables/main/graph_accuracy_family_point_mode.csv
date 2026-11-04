@@ -65,9 +65,9 @@ adversarial,R.tool,state,taint,593,0.4536,1.0000,0.1561,0.2701,42,0,227,0.1538,0
 adversarial,S.write,state,declared,134,0.1269,,0.0000,,0,0,17,,
 adversarial,S.write,state,dataflow,134,0.1269,0.1269,1.0000,0.2252,17,117,0,0.0377,0.4615
 adversarial,S.write,state,taint,134,0.1269,1.0000,0.9412,0.9697,16,0,1,0.6667,1.0000
-control,R.out,message,declared,126,0.2381,0.5714,0.6667,0.6154,20,15,10,0.2667,1.0000
-control,R.out,message,dataflow,126,0.2381,0.2381,1.0000,0.3846,30,96,0,0.1399,0.6823
-control,R.out,message,taint,126,0.2381,1.0000,0.3333,0.5000,10,0,20,0.3333,1.0000
-control,R.out,state,declared,166,0.1145,0.3167,1.0000,0.4810,19,41,0,0.2022,0.9496
-control,R.out,state,dataflow,166,0.1145,0.1145,1.0000,0.2054,19,147,0,0.0878,0.4847
-control,R.out,state,taint,166,0.1145,1.0000,0.7895,0.8824,15,0,4,0.7143,1.0000
+control,R.out,message,declared,306,0.1176,0.1268,0.7222,0.2158,26,179,10,0.0702,0.3797
+control,R.out,message,dataflow,306,0.1176,0.1176,1.0000,0.2105,36,270,0,0.0601,0.4067
+control,R.out,message,taint,306,0.1176,1.0000,0.2778,0.4348,10,0,26,0.2564,1.0000
+control,R.out,state,declared,342,0.1316,0.1814,0.9111,0.3026,41,185,4,0.0900,0.5572
+control,R.out,state,dataflow,342,0.1316,0.1316,1.0000,0.2326,45,297,0,0.0911,0.3947
+control,R.out,state,taint,342,0.1316,1.0000,0.3333,0.5000,15,0,30,0.2008,0.8179

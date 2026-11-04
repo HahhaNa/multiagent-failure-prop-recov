@@ -1,8 +1,8 @@
 {
  "exp": "main",
- "runs_done": 2940,
+ "runs_done": 3080,
  "by_kind": {
-  "fault": 2240,
+  "fault": 2380,
   "clean": 560,
   "ref": 140
  },

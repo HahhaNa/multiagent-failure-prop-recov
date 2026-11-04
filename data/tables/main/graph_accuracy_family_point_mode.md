@@ -66,9 +66,9 @@
 | adversarial | S.write | state   | declared |           134 |              0.13 |      nan    |     0.00 | nan    |    0 |    0 |   17 |  nan    |  nan    |
 | adversarial | S.write | state   | dataflow |           134 |              0.13 |        0.13 |     1.00 |   0.23 |   17 |  117 |    0 |    0.04 |    0.46 |
 | adversarial | S.write | state   | taint    |           134 |              0.13 |        1.00 |     0.94 |   0.97 |   16 |    0 |    1 |    0.67 |    1.00 |
-| control     | R.out   | message | declared |           126 |              0.24 |        0.57 |     0.67 |   0.62 |   20 |   15 |   10 |    0.27 |    1.00 |
-| control     | R.out   | message | dataflow |           126 |              0.24 |        0.24 |     1.00 |   0.38 |   30 |   96 |    0 |    0.14 |    0.68 |
-| control     | R.out   | message | taint    |           126 |              0.24 |        1.00 |     0.33 |   0.50 |   10 |    0 |   20 |    0.33 |    1.00 |
-| control     | R.out   | state   | declared |           166 |              0.11 |        0.32 |     1.00 |   0.48 |   19 |   41 |    0 |    0.20 |    0.95 |
-| control     | R.out   | state   | dataflow |           166 |              0.11 |        0.11 |     1.00 |   0.21 |   19 |  147 |    0 |    0.09 |    0.48 |
-| control     | R.out   | state   | taint    |           166 |              0.11 |        1.00 |     0.79 |   0.88 |   15 |    0 |    4 |    0.71 |    1.00 |
+| control     | R.out   | message | declared |           306 |              0.12 |        0.13 |     0.72 |   0.22 |   26 |  179 |   10 |    0.07 |    0.38 |
+| control     | R.out   | message | dataflow |           306 |              0.12 |        0.12 |     1.00 |   0.21 |   36 |  270 |    0 |    0.06 |    0.41 |
+| control     | R.out   | message | taint    |           306 |              0.12 |        1.00 |     0.28 |   0.43 |   10 |    0 |   26 |    0.26 |    1.00 |
+| control     | R.out   | state   | declared |           342 |              0.13 |        0.18 |     0.91 |   0.30 |   41 |  185 |    4 |    0.09 |    0.56 |
+| control     | R.out   | state   | dataflow |           342 |              0.13 |        0.13 |     1.00 |   0.23 |   45 |  297 |    0 |    0.09 |    0.39 |
+| control     | R.out   | state   | taint    |           342 |              0.13 |        1.00 |     0.33 |   0.50 |   15 |    0 |   30 |    0.20 |    0.82 |

@@ -1,0 +1,6 @@
+family,point,mode,n,no_dependence,read_not_used,corrected,contained,propagated_failure,propagated_harm,stall
+accidental,P.out,message,16,0.0000,0.0000,0.1250,0.0000,0.1250,0.0000,0.7500
+accidental,R.out,message,24,0.0000,0.0000,0.0000,0.0000,0.2083,0.0000,0.7917
+accidental,R.start,message,28,0.0000,0.0000,0.0357,0.0000,0.1786,0.0000,0.7857
+adversarial,E.tool,message,28,0.0000,0.0357,0.0000,0.0000,0.1071,0.2143,0.6429
+adversarial,R.out,message,28,0.0000,0.0000,0.0000,0.0000,0.1071,0.1071,0.7857

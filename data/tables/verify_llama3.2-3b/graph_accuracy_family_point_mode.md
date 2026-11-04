@@ -1,0 +1,20 @@
+| family      | point   | mode    | graph    |   n_artifacts |   dependent_share |   precision |   recall |     f1 |   tp |   fp |   fn |   f1_lo |   f1_hi |
+|:------------|:--------|:--------|:---------|--------------:|------------------:|------------:|---------:|-------:|-----:|-----:|-----:|--------:|--------:|
+| accidental  | P.out   | message | declared |            44 |              0.48 |        0.50 |     0.43 |   0.46 |    9 |    9 |   12 |    0.08 |    0.65 |
+| accidental  | P.out   | message | dataflow |            44 |              0.48 |        0.48 |     1.00 |   0.65 |   21 |   23 |    0 |    0.35 |    0.91 |
+| accidental  | P.out   | message | taint    |            44 |              0.48 |        1.00 |     0.52 |   0.69 |   11 |    0 |   10 |    0.32 |    0.93 |
+| accidental  | R.out   | message | declared |           120 |              0.45 |        0.70 |     0.65 |   0.67 |   35 |   15 |   19 |    0.26 |    0.88 |
+| accidental  | R.out   | message | dataflow |           120 |              0.45 |        0.45 |     1.00 |   0.62 |   54 |   66 |    0 |    0.34 |    0.81 |
+| accidental  | R.out   | message | taint    |           120 |              0.45 |        1.00 |     0.22 |   0.36 |   12 |    0 |   42 |    0.15 |    0.79 |
+| accidental  | R.start | message | declared |           211 |              0.89 |      nan    |     0.00 | nan    |    0 |    0 |  187 |  nan    |  nan    |
+| accidental  | R.start | message | dataflow |           211 |              0.89 |        0.89 |     1.00 |   0.94 |  187 |   24 |    0 |    0.90 |    0.98 |
+| accidental  | R.start | message | taint    |           211 |              0.89 |      nan    |     0.00 | nan    |    0 |    0 |  187 |  nan    |  nan    |
+| adversarial | E.tool  | message | declared |           115 |              0.70 |      nan    |     0.00 | nan    |    0 |    0 |   80 |  nan    |  nan    |
+| adversarial | E.tool  | message | dataflow |           115 |              0.70 |        0.70 |     1.00 |   0.82 |   80 |   35 |    0 |    0.72 |    0.89 |
+| adversarial | E.tool  | message | taint    |           115 |              0.70 |        1.00 |     0.35 |   0.52 |   28 |    0 |   52 |    0.29 |    0.68 |
+| adversarial | R.out   | message | declared |           156 |              0.74 |        0.98 |     0.44 |   0.61 |   51 |    1 |   64 |    0.29 |    0.81 |
+| adversarial | R.out   | message | dataflow |           156 |              0.74 |        0.74 |     1.00 |   0.85 |  115 |   41 |    0 |    0.76 |    0.92 |
+| adversarial | R.out   | message | taint    |           156 |              0.74 |        1.00 |     0.12 |   0.22 |   14 |    0 |  101 |    0.09 |    0.35 |
+| control     | R.out   | message | declared |           126 |              0.53 |        0.55 |     0.25 |   0.35 |   17 |   14 |   50 |    0.12 |    0.62 |
+| control     | R.out   | message | dataflow |           126 |              0.53 |        0.53 |     1.00 |   0.69 |   67 |   59 |    0 |    0.55 |    0.80 |
+| control     | R.out   | message | taint    |           126 |              0.53 |        1.00 |     0.13 |   0.24 |    9 |    0 |   58 |    0.03 |    0.56 |

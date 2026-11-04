@@ -1,0 +1,3 @@
+exp,mode,n,clean_success,lo,hi,tokens,verifier_tokens,llm_calls
+cross_llama3.2-3b,message,28,0.2500,0.0714,0.4643,53868.0000,0.0000,15.6429
+verify_llama3.2-3b,message,28,0.2500,0.0714,0.4286,62338.8214,4885.8571,22.6071
