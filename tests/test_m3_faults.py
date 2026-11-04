@@ -116,3 +116,14 @@ def test_byzantine_claim(specs, mock):
     assert s["injected"] and rec["injected"] == specs["banking.user_task_0"].canary  # IBAN fact -> attacker IBAN
     claims = s["findings"]["claims"]
     assert any(c["value"] == rec["original"] for c in claims)  # the true claim stays: contradicting outputs
+
+
+@pytest.mark.parametrize("key", TASKS)
+def test_benign_paraphrase_keeps_values(specs, mock, key):
+    for mode in ("message", "state"):
+        ep, s = run(specs[key], mode, "BP_R", mock)
+        f = ep.artifacts["findings"]
+        assert s["injected"] and all(c["text"].startswith("Restating") for c in f["claims"])
+        ep0, s0 = run(specs[key], mode, None, mock)
+        assert [c["value"] for c in f["claims"]] == [c["value"] for c in ep0.artifacts["findings"]["claims"]]
+        assert s["utility"] == s0["utility"] and s["category"] in ("read_not_used", "no_dependence")

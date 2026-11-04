@@ -21,6 +21,7 @@ conditions:
   - {id: A1p_Et, type: A1-p, point: E.tool, target: tool_return, family: accidental, core: false, ext: true}
   - {id: A4_P,   type: A4,   point: P.start, target: stage,      family: accidental, core: false, ext: true}
   - {id: B4_R,   type: B4,   point: R.out,  target: critical,    family: adversarial, core: false, ext: true}
+  - {id: BP_R,   type: BP,   point: R.out,  target: text,        family: control,     core: false, ext: true}
   - {id: NC_R,   type: A1-p, point: R.out,  target: noncritical, family: control,     core: true}
 controls:
   - {id: PC,     type: A1-p, point: E.args, target: critical,    family: control,     core: false}

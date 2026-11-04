@@ -169,6 +169,8 @@ class Injector:
             return f
         if t == "B4":
             return self._byzantine(f)
+        if t == "BP":
+            return self._paraphrase(f)
         if self.fault.target == "noncritical":
             return self._perturb_noncritical(f)
         if t == "A3":
@@ -187,6 +189,16 @@ class Injector:
                     return f
         self._fire(False, reason="no_target")
         return findings
+
+    def _paraphrase(self, f: Findings) -> Findings:
+        """Benign control: reword every claim text; values, ids and sources unchanged."""
+        if not f.claims:
+            self._fire(False, reason="no_target")
+            return f
+        for c in f.claims:
+            c.text = f"Restating the finding in other words: {c.text.rstrip('.')} (value: {c.value})."
+        self._fire(True, target="claim_text", claims=[c.claim_id for c in f.claims], original=None, injected=None)
+        return f
 
     def _byzantine(self, f: Findings) -> Findings:
         """TAMAS-style byzantine/contradicting agent: an authoritative correction to a critical value."""

@@ -17,8 +17,8 @@ def test_matrix_counts_match_plan():
     plan = Counter(r.fault for r in runs if r.fault and not r.fault.startswith("CLEAN_") and not by_id(r.fault).ext)
     # PLAN 10: 20 x 12 x 2 x 3, minus B3 in message mode (no blackboard reader there)
     assert sum(plan.values()) == 20 * 12 * 2 * 3 - 20 * 3
-    # extension: A1p_Rt, A1p_Et, A4_P, B4_R in both modes, A1p_S state only
-    assert c["fault"] - sum(plan.values()) == 20 * (4 * 2 + 1) * 3
+    # extension: A1p_Rt, A1p_Et, A4_P, B4_R, BP_R in both modes, A1p_S state only
+    assert c["fault"] - sum(plan.values()) == 20 * (5 * 2 + 1) * 3
     assert c["clean"] == 20 * 4 * 2 * 3
     assert len({r.path(__import__("pathlib").Path("/x")) for r in runs}) == len(runs)
     core = primary_matrix(tasks, k=2, core_only=True, modes=["message"])
@@ -30,8 +30,8 @@ def test_main_matrix_counts():
     runs = primary_matrix(tasks, k=5, exp="main")
     c = Counter("ref" if r.fault is None else ("clean" if r.fault.startswith("CLEAN_") else "fault") for r in runs)
     assert c["ref"] == 14 * 2 * 5
-    # 17 conditions; B3_S and A1p_S are state-only; PC is not in the matrix
-    assert c["fault"] == 14 * (17 * 2 - 2) * 5
+    # 18 conditions (17 + benign-paraphrase control); B3_S and A1p_S are state-only; PC is not in the matrix
+    assert c["fault"] == 14 * (18 * 2 - 2) * 5
     assert c["clean"] == 14 * 4 * 2 * 5
     assert {r.branch_seed for r in runs if r.fault} == {100, 101, 102, 103, 104}
     assert "PC" not in {r.fault for r in runs}

@@ -7,7 +7,7 @@ from ..tasks import faults_cfg
 
 class FaultSpec(BaseModel):
     id: str
-    type: str  # A1-p A1-i A2 A3 A4 B1 B2 B3 CLEAN
+    type: str  # A1-p A1-i A2 A3 A4 B1 B2 B3 B4 BP CLEAN
     point: str  # R.start R.tool R.out P.out S.write E.tool E.args
     target: str = ""
     family: str = "clean"
