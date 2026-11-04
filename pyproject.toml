@@ -1,0 +1,28 @@
+[project]
+name = "fpr"
+version = "0.1.0"
+description = "Failure propagation and recovery in multi-agent systems"
+requires-python = ">=3.12"
+dependencies = [
+    "agentdojo==0.1.35",
+    "pyyaml>=6.0.3",
+    "vllm==0.33.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+# nvcc must match the CUDA 13.0 headers used by torch 2.14.0+cu130.
+constraint-dependencies = [
+    "nvidia-cuda-nvcc==13.0.*",
+    "nvidia-cuda-crt==13.0.*",
+    "nvidia-nvvm==13.0.*",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+]
