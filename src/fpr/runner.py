@@ -1,7 +1,7 @@
 """Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
 
 Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
-Stages: screen0 screen1 screen_all select pilot primary cross status
+Stages: screen0 screen1 screen_all select pilot primary main cross status
 """
 
 import argparse
@@ -279,6 +279,8 @@ def main() -> None:
         runs = expand(a.exp or "pilot", tasks, modes, [0], conditions(include_controls=True), fc["clean_points"], [cfg["branch_seeds"][0]])
     elif a.stage == "primary":
         runs = primary_matrix(selected, k=a.k, core_only=a.core_only, modes=modes, exp=a.exp or "primary")
+    elif a.stage == "main":
+        runs = primary_matrix(selected, k=5, modes=modes, exp=a.exp or "main")
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:

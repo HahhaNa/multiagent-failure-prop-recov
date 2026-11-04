@@ -2,8 +2,8 @@ benchmark_version: v1.2.2
 suites: [banking, workspace, slack]
 model: qwen3-8b
 temperature: 0.3
-ref_seeds: [0, 1, 2]
-branch_seeds: [100, 101, 102]
+ref_seeds: [0, 1, 2, 3, 4]
+branch_seeds: [100, 101, 102, 103, 104]
 modes: [message, state]
 max_tokens: 1024
 tool_output_chars: 5000

@@ -25,6 +25,18 @@ def test_matrix_counts_match_plan():
     assert sum(1 for r in core if r.fault and not r.fault.startswith("CLEAN_")) == 20 * 7 * 2  # B3 core but state-only
 
 
+def test_main_matrix_counts():
+    tasks = [f"t.{i}" for i in range(14)]
+    runs = primary_matrix(tasks, k=5, exp="main")
+    c = Counter("ref" if r.fault is None else ("clean" if r.fault.startswith("CLEAN_") else "fault") for r in runs)
+    assert c["ref"] == 14 * 2 * 5
+    # 17 conditions; B3_S and A1p_S are state-only; PC is not in the matrix
+    assert c["fault"] == 14 * (17 * 2 - 2) * 5
+    assert c["clean"] == 14 * 4 * 2 * 5
+    assert {r.branch_seed for r in runs if r.fault} == {100, 101, 102, 103, 104}
+    assert "PC" not in {r.fault for r in runs}
+
+
 def _runner(specs, mock, root, conc=64):
     llm = CachedLLM(mock, DiskCache(root / "cache"), "record")
     return Runner(llm, load_cfg(), specs, "mock", "mock", conc, root), llm
