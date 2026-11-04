@@ -1,0 +1,5 @@
+exp,mode,n,clean_success,lo,hi,tokens,verifier_tokens,llm_calls
+main_wide,message,20,0.3000,0.0000,0.6000,30269.1500,0.0000,14.5500
+main_wide,state,20,0.4000,0.1000,0.7000,32033.9500,0.0000,16.4500
+verify_wide,message,20,0.0500,0.0000,0.1500,36480.8000,4222.8500,18.1000
+verify_wide,state,20,0.2500,0.0000,0.5000,35506.6000,4454.1500,19.8500
