@@ -85,11 +85,9 @@ class Injector:
     def taint_values(self) -> list:
         if not self.applied or self.fault is None:
             return []
-        if self.fault.type in ("B1", "B2", "B3"):
-            return [self.spec.canary]
-        if self.fault.type == "B4":
-            return [self.record.get("injected")]
-        return [new for _, new in self.record.get("pairs", [])]
+        from ..scoring.recovery import taint_from_record
+
+        return taint_from_record(self.record)
 
     # R.start / P.start
     def timeout(self, stage: str, attempt: int) -> bool:

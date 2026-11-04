@@ -1,7 +1,7 @@
 """Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
 
 Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
-Stages: screen0 screen1 screen_all select pilot primary main verify_pilot verify cross status
+Stages: screen0 screen1 screen_all select pilot primary main verify_pilot verify restart cross status
 """
 
 import argparse
@@ -24,6 +24,7 @@ from .faults.spec import FaultSpec, clean_point, conditions
 from .llm.cache import CachedLLM, DiskCache
 from .llm.client import OpenAIClient
 from .orchestrator import Episode, EpisodeConfig
+from .scoring.recovery import mark_tainted, taint_from_record
 from .tasks import TaskSpec, load_specs
 
 
@@ -35,6 +36,7 @@ class RunSpec:
     fault: str | None
     ref_seed: int
     branch_seed: int
+    recover_from: str | None = None  # R1: faulted run directory to restart from
 
     @property
     def name(self) -> str:
@@ -111,6 +113,26 @@ def primary_matrix(tasks: list[str], k: int = 3, core_only: bool = False, modes:
     return expand(exp, tasks, modes or cfg["modes"], cfg["ref_seeds"][:k], conds, fc["clean_points"], cfg["branch_seeds"][:k])
 
 
+RECOVERY_SEED0 = 200
+
+
+def prior_effects(run_dir: Path) -> list[dict]:
+    """External effects of a finished faulted run, in order, with taint flags."""
+    s = json.loads((run_dir / "summary.json").read_text())
+    return mark_tainted(s.get("external_effects") or [], taint_from_record(s.get("fault_record") or {}))
+
+
+def restart_matrix(root: Path, src_exp: str = "main", exp: str = "restart", faults: list[str] | None = None) -> list[RunSpec]:
+    """One R1 run per injected fault branch of src_exp."""
+    out = []
+    for s in summaries(root, src_exp):
+        f = s.get("fault")
+        if not f or f.startswith("CLEAN_") or not s.get("injected") or (faults and f not in faults):
+            continue
+        out.append(RunSpec(exp, s["task"], s["mode"], f, s["ref_seed"], s["branch_seed"], recover_from=s["run_dir"]))
+    return out
+
+
 # ---------- execution ----------
 
 
@@ -152,6 +174,10 @@ class Runner:
                 turns=c["turns"], clock=c["clock"], tool_output_chars=c["tool_output_chars"], expect_replay=r.fault is not None,
                 single_tool_calls=self.single_tool_calls, verify=self.verify,
             )
+            if r.recover_from:
+                ec.fault_id, ec.expect_replay = None, False
+                ec.ref_seed = ec.branch_seed = RECOVERY_SEED0 + (r.branch_seed - self.cfg["branch_seeds"][0])
+                ec.prior_effects = prior_effects(Path(r.recover_from))
             man = {**self.manifest, "run": r.__dict__, "seed": r.ref_seed, "branch_seed": r.branch_seed, "start": datetime.now().isoformat()}
             (d / "manifest.json").write_text(json.dumps(man, indent=1))
             try:
@@ -288,6 +314,9 @@ def main() -> None:
         fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
         k = a.k or 5
         runs = expand(a.exp or "verify", selected, modes, cfg["ref_seeds"][:k], conditions(include_controls=True), fc["clean_points"], cfg["branch_seeds"][:k])
+    elif a.stage == "restart":
+        core = [c.id for c in conditions() if c.core] if a.core_only else None
+        runs = restart_matrix(root, "main", a.exp or "restart", core)
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:

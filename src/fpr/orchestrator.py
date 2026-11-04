@@ -24,6 +24,7 @@ from .faults.spec import by_id
 from .llm.cache import CacheMiss
 from .llm.client import LLM
 from .scoring.outcome import score
+from .scoring.recovery import recovery_metrics
 from .tasks import TaskSpec
 from .trace.events import EventLog
 from .trace.graph import build as build_graphs
@@ -46,6 +47,7 @@ class EpisodeConfig:
     expect_replay: bool = False
     single_tool_calls: bool = False
     verify: bool = False  # R3 verify-all mode
+    prior_effects: list[dict] | None = None  # R1: external effects of the faulted run, re-applied first
 
 
 @dataclass
@@ -75,6 +77,9 @@ class Episode:
         )
         self.inj = Injector(c.spec, self.fault, self.ctx)
         self.artifacts: dict = {}
+        for n, e in enumerate(c.prior_effects or []):
+            err = self.env.apply_prior(e["tool"], e["args"], n)
+            self.log.emit("prior_effect", {"n": n, "tool": e["tool"], "args": e["args"], "rev": e["rev"], "tainted": e.get("tainted", False), "error": err})
 
     def _artifact(self, name: str, agent: str, content, vid: str | None = None) -> None:
         self.artifacts[name] = content
@@ -172,6 +177,8 @@ class Episode:
         self._artifact("report", "executor", report)
         self.log.emit("episode_end", {"stalled": report is None, "error": error})
         summary = score(self, report, error)
+        if c.prior_effects is not None:
+            summary.update(recovery_metrics(c.prior_effects, summary["external_effects"], summary["security_violation"]))
         summary["wall_s"] = round(time.perf_counter() - t_wall, 3)
         summary["overhead"] = {k: round(v, 6) for k, v in self.store.timers.items()}
         if self.run_dir:

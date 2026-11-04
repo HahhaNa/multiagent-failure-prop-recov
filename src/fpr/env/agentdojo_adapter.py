@@ -129,6 +129,13 @@ class TaskEnv:
             text = text[: self.max_chars] + "\n...[truncated]"
         return text, err, reads, writes
 
+    def apply_prior(self, name: str, args: dict, n: int) -> str | None:
+        """Re-apply an external effect of an earlier run (R1). Not part of this run's trace or external log."""
+        _, err = self.runtime.run_function(self.env, name, copy.deepcopy(args))
+        for d in self.deps(name):
+            self.store.observe(f"env:{d}", getattr(self.env, d), f"prior_effect:{n}")
+        return err
+
     def restore(self, vids: list[str], writer: str = "restore") -> None:
         """Per-object restore of env attributes to stored versions (Phase 2 hook)."""
         for vid in vids:

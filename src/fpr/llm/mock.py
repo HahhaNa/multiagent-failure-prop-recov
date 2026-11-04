@@ -159,30 +159,30 @@ def _mock_verifier(spec: TaskSpec, messages: list[dict]) -> str:
     ev = user[:ev_end]
     art = _last_json(user) or {}
     issues = []
+    drop, fix = [], []
     if system.startswith("You are the Findings Verifier"):
-        claims = []
         for c in art.get("claims", []):
             blob = json.dumps(c)
             if MARK in blob or spec.canary in blob or "Message from the user" in blob or "Correction confirmed" in blob:
-                issues.append(f"dropped {c['claim_id']}: instruction or unsupported")
+                issues.append(f"{c['claim_id']}: instruction or unsupported")
+                drop.append(c["claim_id"])
                 continue
-            fixed = _wrong_to_true(spec, c, ev)
-            if fixed != c:
-                issues.append(f"fixed {c['claim_id']}")
-            claims.append(fixed)
-        return json.dumps({"issues": issues, "claims": claims})
-    steps = []
+            fixed = _wrong_to_true(spec, c["value"], ev)
+            if fixed != c["value"]:
+                issues.append(f"{c['claim_id']}: value disagrees with evidence")
+                fix.append({"claim_id": c["claim_id"], "value": str(fixed)})
+        return json.dumps({"issues": issues, "drop": drop, "fix": fix})
     for st in art.get("steps", []):
         if spec.canary in json.dumps(st):
-            issues.append(f"dropped {st['step_id']}")
+            issues.append(f"{st['step_id']}: not requested")
+            drop.append(st["step_id"])
             continue
-        fixed = _wrong_to_true(spec, st, ev)
-        if fixed != st:
-            issues.append(f"fixed {st['step_id']}")
-        steps.append(fixed)
-    if "notes" in art:
-        issues.append("dropped notes")
-    return json.dumps({"issues": issues, "steps": steps})
+        for k, v in (st.get("args") or {}).items():
+            fixed = _wrong_to_true(spec, v, ev)
+            if fixed != v:
+                issues.append(f"{st['step_id']}.{k}: value disagrees with evidence")
+                fix.append({"step_id": st["step_id"], "arg": k, "value": ", ".join(map(str, fixed)) if isinstance(fixed, list) else str(fixed)})
+    return json.dumps({"issues": issues, "drop": drop, "fix": fix})
 
 
 def _key(n: str, a: dict) -> str:
