@@ -33,15 +33,15 @@ def tokens(df: pd.DataFrame) -> pd.Series:
     return df.prompt_tokens + df.completion_tokens
 
 
-def branches(root: Path) -> pd.DataFrame:
-    main = load("main", root)
+def branches(root: Path, exps: dict) -> pd.DataFrame:
+    main = load(exps["main"], root)
     d = main[(main.kind == "fault") & main.injected].copy()
-    d = d.merge(fault_caused("main"), on=KEY, how="left").fillna({"fc_irrev": 0, "fc_comp": 0})
+    d = d.merge(fault_caused(exps["main"]), on=KEY, how="left").fillna({"fc_irrev": 0, "fc_comp": 0})
     r0 = d.assign(method="R0", utility_m=d.utility, harm_m=d.harm.astype(bool), unrec=d.fc_irrev, comp=d.fc_comp, dups=0,
                   recomp_calls=0, recomp_tokens=0, total_tokens=tokens(d), latency=d.llm_latency_s, extra_tokens=0)
     cols = KEY + ["family", "point", "ftype", "method", "utility_m", "harm_m", "unrec", "comp", "dups", "recomp_calls", "recomp_tokens", "total_tokens", "latency", "extra_tokens"]
     out = [r0[cols]]
-    rs = load("restart", root)
+    rs = load(exps["restart"], root)
     if not rs.empty:
         rs = rs.copy()
         rs["fault"] = rs.run_dir.map(lambda p: Path(p).name.rsplit("_b", 1)[0])
@@ -51,12 +51,12 @@ def branches(root: Path) -> pd.DataFrame:
         r1 = rs.assign(method="R1", utility_m=rs.utility, harm_m=rs.residual_harm.astype(bool), unrec=rs.fc_irrev, comp=rs.fc_comp, dups=rs.duplicates,
                        recomp_calls=rs.n_llm_calls, recomp_tokens=tokens(rs), total_tokens=tokens(rs) + rs.d_pt + rs.d_ct, latency=rs.llm_latency_s + rs.d_lat, extra_tokens=tokens(rs))
         out.append(r1[cols])
-    vf = load("verify", root)
+    vf = load(exps["verify"], root)
     if not vf.empty:
         v = vf[(vf.kind == "fault") & (vf.fault != "PC") & vf.injected].copy()
-        if not (ROOT / "data/tables/verify/cf_artifacts.csv.gz").exists():
-            raise SystemExit("run analysis/phase1_counterfactual.py --exp verify first")
-        v = v.merge(fault_caused("verify"), on=KEY, how="left").fillna({"fc_irrev": 0, "fc_comp": 0})
+        if not (ROOT / f"data/tables/{exps['verify']}/cf_artifacts.csv.gz").exists():
+            raise SystemExit(f"run analysis/phase1_counterfactual.py --exp {exps['verify']} first")
+        v = v.merge(fault_caused(exps["verify"]), on=KEY, how="left").fillna({"fc_irrev": 0, "fc_comp": 0})
         v = v.merge(d[KEY], on=KEY)  # identical fault schedule: injected in both main and verify
         r3 = v.assign(method="R3", utility_m=v.utility, harm_m=v.harm.fillna(v.security_violation).astype(bool), unrec=v.fc_irrev, comp=v.fc_comp, dups=0,
                       recomp_calls=0, recomp_tokens=0, total_tokens=tokens(v), latency=v.llm_latency_s, extra_tokens=v.verifier_tokens)
@@ -108,12 +108,12 @@ def paired_delta(b: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def clean_overhead(root: Path) -> pd.DataFrame:
-    m, v = load("main", root), load("verify", root)
+def clean_overhead(root: Path, exps: dict) -> pd.DataFrame:
+    m, v = load(exps["main"], root), load(exps["verify"], root)
     if v.empty:
         return pd.DataFrame()
     rows = []
-    for name, x in (("main", m), ("verify", v)):
+    for name, x in ((exps["main"], m), (exps["verify"], v)):
         r = x[x.kind == "ref"]
         for mode, g in r.groupby("mode"):
             lo, hi = boot_ci(g, lambda t: t.utility.mean())
@@ -176,11 +176,16 @@ def fig8(s: pd.DataFrame, d: Path) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default="")
+    ap.add_argument("--main", default="main")
+    ap.add_argument("--restart", default="restart")
+    ap.add_argument("--verify", default="verify")
+    ap.add_argument("--tag", default="recovery")
     a = ap.parse_args()
     root = Path(a.root) if a.root else runs_root()
-    b = branches(root)
+    exps = {"main": a.main, "restart": a.restart, "verify": a.verify}
+    b = branches(root, exps)
     b = b[b.family != "control"]
-    dt, df_ = out_dir("tables/recovery"), out_dir("figures/recovery")
+    dt, df_ = out_dir(f"tables/{a.tag}"), out_dir(f"figures/{a.tag}")
     tables = {
         "recovery_family": summarize(b, ["family"]),
         "recovery_family_mode": summarize(b, ["family", "mode"]),
@@ -188,7 +193,7 @@ def main() -> None:
         "recovery_condition": summarize(b, ["fault"]),
         "recovery_delta_family": paired_delta(b, ["family"]),
         "recovery_delta_family_stage": paired_delta(b, ["family", "point"]),
-        "clean_overhead": clean_overhead(root),
+        "clean_overhead": clean_overhead(root, exps),
     }
     for name, t in tables.items():
         t.to_csv(dt / f"{name}.csv", index=False, float_format="%.4f")
