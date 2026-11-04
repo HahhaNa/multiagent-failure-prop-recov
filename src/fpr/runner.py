@@ -1,7 +1,7 @@
 """Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
 
 Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
-Stages: screen0 screen1 screen_all select pilot primary main verify_pilot verify restart cross status
+Stages: screen0 screen1 screen_all select pilot primary main main_wide t0 verify_pilot verify restart cross status
 """
 
 import argparse
@@ -309,6 +309,14 @@ def main() -> None:
         runs = primary_matrix(selected, k=a.k or 3, core_only=a.core_only, modes=modes, exp=a.exp or "primary")
     elif a.stage == "main":
         runs = primary_matrix(selected, k=5, modes=modes, exp=a.exp or "main")
+    elif a.stage == "main_wide":  # W6.2 robustness set: tasks with clean pass rate in [1/3, 0.5), not pooled with main
+        rate = yaml.safe_load(sel_path.read_text()).get("pass_rate", {})
+        wide = sorted(t for t, v in rate.items() if 0.3 <= v < 0.5)
+        runs = primary_matrix(wide, k=5, modes=modes, exp=a.exp or "main_wide")
+    elif a.stage == "t0":  # W6.3 noise floor at temperature 0: refs + clean continuations, 5 tasks, k=5
+        fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
+        cfg = {**cfg, "temperature": 0.0}
+        runs = expand(a.exp or "t0", selected[:: max(1, len(selected) // 5)][:5], modes, cfg["ref_seeds"][:5], [], fc["clean_points"], cfg["branch_seeds"][:5])
     elif a.stage == "verify_pilot":  # PLAN2 4: mini pilot, 5 tasks, k=1, clean refs only
         runs = expand(a.exp or "verify_pilot", selected[:: max(1, len(selected) // 5)][:5], modes, [0], [], [], [])
     elif a.stage == "verify":
