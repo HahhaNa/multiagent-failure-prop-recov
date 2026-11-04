@@ -42,7 +42,7 @@ def fig_heatmap(f: pd.DataFrame, d) -> None:
         for s in ax.spines.values():
             s.set_visible(False)
         ax.tick_params(length=0)
-    fig.suptitle("Outcome category by fault condition (share of fault branches, both handoff modes)", x=0.01, ha="left", fontsize=11)
+    fig.suptitle("Outcome category by fault condition (share of injected fault branches, both handoff modes)", x=0.01, ha="left", fontsize=11)
     fig.savefig(d / "fig1_propagation_heatmap.png")
     plt.close(fig)
 
@@ -129,7 +129,7 @@ def fig_window(f: pd.DataFrame, d) -> None:
                 yy = i + (j - 0.5) * 0.35
                 ax.scatter(v, yy + rng.uniform(-0.08, 0.08, len(v)), s=10, color=["#2a78d6", "#eb6834"][j], alpha=0.6, lw=0)
                 ax.plot([np.median(v)] * 2, [yy - 0.15, yy + 0.15], color=INK, lw=2)
-        ax.set_xlabel(f"injection -> first tainted irreversible action, {label}")
+        ax.set_xlabel(f"injection -> first tainted irreversible or compensable action, {label}")
         ax.set_yticks(range(len(rows)), rows)
         ax.invert_yaxis()
     axes[0].scatter([], [], color="#2a78d6", label="message")
@@ -207,7 +207,7 @@ def main() -> None:
     from pathlib import Path
 
     df = load(a.exp, Path(a.root) if a.root else runs_root())
-    f = df[df.kind == "fault"]
+    f = df[(df.kind == "fault") & df.injected]  # category shares are over injected branches
     d = out_dir(f"figures/{a.exp}")
     fig_heatmap(f, d)
     fig_sankey(f, d)

@@ -26,8 +26,11 @@ def _rate(num, den):
 
 def aggregate(f: pd.DataFrame, prov: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
     rows = []
-    for k, g in f.groupby(keys):
+    for k, g_all in f.groupby(keys):
         k = k if isinstance(k, tuple) else (k,)
+        g = g_all[g_all.injected]
+        if g.empty:
+            continue
         dep = g.category.isin(DEPENDENT)
         win = g.irrev_window.map(lambda w: w if isinstance(w, dict) else None).dropna()
         p = prov
@@ -39,8 +42,9 @@ def aggregate(f: pd.DataFrame, prov: pd.DataFrame, keys: list[str]) -> pd.DataFr
         rows.append(
             {
                 **dict(zip(keys, k)),
+                "n_branches": len(g_all),
+                "injected": g_all.injected.mean(),
                 "n": len(g),
-                "injected": g.injected.mean(),
                 "dependence": dep.mean(),
                 "prop_given_dep": _rate(g.category.isin(PROPAGATED).sum(), dep.sum()),
                 "harm_rate": (g.category == "propagated_harm").mean(),

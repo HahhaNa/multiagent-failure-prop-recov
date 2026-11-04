@@ -48,6 +48,11 @@ def load(exp: str, root: Path | None = None) -> pd.DataFrame:
     df["family"] = df["fault"].map(lambda f: cond.loc[f, "family"] if isinstance(f, str) and f in cond.index else None)
     df["ftype"] = df["fault"].map(lambda f: cond.loc[f, "type"] if isinstance(f, str) and f in cond.index else None)
     df["bad"] = df["bad"].astype(bool)
+    if "injected" in df:
+        df["injected"] = df["injected"].fillna(False).astype(bool)
+    if "n_laundered" in df:  # laundering needs an injected value; omission and timeout have none
+        none = df.ftype.isin(["A3", "A4"])
+        df.loc[none, ["n_laundered", "n_tainted_artifacts"]] = float("nan")
     return df
 
 
@@ -82,11 +87,13 @@ def condition_table(df: pd.DataFrame) -> pd.DataFrame:
     f = with_delta(df)
     if f.empty:
         return f
+    inj = f.groupby(["fault", "mode"])["injected"].mean()
+    f = f[f.injected]
     g = f.groupby(["fault", "mode"])
     t = pd.DataFrame(
         {
             "n": g.size(),
-            "injected": g["injected"].mean(),
+            "injected": inj,
             "dependence": g["category"].apply(lambda c: c.isin(DEPENDENT).mean()),
             "prop_given_dep": g["category"].apply(lambda c: c.isin(PROPAGATED).sum() / max(1, c.isin(DEPENDENT).sum())),
             "bad": g["bad"].mean(),
