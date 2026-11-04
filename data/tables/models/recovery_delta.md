@@ -1,10 +1,26 @@
-| family      | method   | metric   |    n |   delta_vs_R0 |    lo |    hi | model    |
-|:------------|:---------|:---------|-----:|--------------:|------:|------:|:---------|
-| accidental  | R1       | utility  | 1160 |          0.27 |  0.13 |  0.40 | Qwen3-8B |
-| accidental  | R1       | harm     | 1160 |          0.00 |  0.00 |  0.00 | Qwen3-8B |
-| adversarial | R1       | utility  |  740 |          0.01 | -0.17 |  0.18 | Qwen3-8B |
-| adversarial | R1       | harm     |  740 |          0.02 |  0.00 |  0.04 | Qwen3-8B |
-| accidental  | R3       | utility  | 1140 |          0.04 | -0.09 |  0.15 | Qwen3-8B |
-| accidental  | R3       | harm     | 1140 |         -0.03 | -0.06 |  0.00 | Qwen3-8B |
-| adversarial | R3       | utility  |  735 |          0.14 | -0.02 |  0.30 | Qwen3-8B |
-| adversarial | R3       | harm     |  735 |         -0.39 | -0.45 | -0.34 | Qwen3-8B |
+| family      | method   | metric   |    n |   delta_vs_R0 |    lo |    hi | model         |
+|:------------|:---------|:---------|-----:|--------------:|------:|------:|:--------------|
+| accidental  | R1       | utility  |  935 |          0.26 |  0.16 |  0.35 | Qwen3-4B      |
+| accidental  | R1       | harm     |  935 |          0.00 |  0.00 |  0.00 | Qwen3-4B      |
+| adversarial | R1       | utility  |  675 |         -0.02 | -0.11 |  0.06 | Qwen3-4B      |
+| adversarial | R1       | harm     |  675 |          0.01 |  0.00 |  0.03 | Qwen3-4B      |
+| accidental  | R3       | utility  |  935 |         -0.01 | -0.09 |  0.05 | Qwen3-4B      |
+| accidental  | R3       | harm     |  935 |         -0.01 | -0.03 | -0.00 | Qwen3-4B      |
+| adversarial | R3       | utility  |  675 |         -0.01 | -0.14 |  0.09 | Qwen3-4B      |
+| adversarial | R3       | harm     |  675 |         -0.33 | -0.42 | -0.23 | Qwen3-4B      |
+| accidental  | R1       | utility  | 1160 |          0.27 |  0.13 |  0.40 | Qwen3-8B      |
+| accidental  | R1       | harm     | 1160 |          0.00 |  0.00 |  0.00 | Qwen3-8B      |
+| adversarial | R1       | utility  |  740 |          0.01 | -0.17 |  0.18 | Qwen3-8B      |
+| adversarial | R1       | harm     |  740 |          0.02 |  0.00 |  0.04 | Qwen3-8B      |
+| accidental  | R3       | utility  | 1140 |          0.04 | -0.09 |  0.15 | Qwen3-8B      |
+| accidental  | R3       | harm     | 1140 |         -0.03 | -0.06 |  0.00 | Qwen3-8B      |
+| adversarial | R3       | utility  |  735 |          0.14 | -0.02 |  0.30 | Qwen3-8B      |
+| adversarial | R3       | harm     |  735 |         -0.39 | -0.45 | -0.34 | Qwen3-8B      |
+| accidental  | R1       | utility  | 1180 |          0.36 |  0.22 |  0.48 | Qwen3-14B-AWQ |
+| accidental  | R1       | harm     | 1180 |          0.00 |  0.00 |  0.00 | Qwen3-14B-AWQ |
+| adversarial | R1       | utility  |  740 |          0.01 | -0.15 |  0.15 | Qwen3-14B-AWQ |
+| adversarial | R1       | harm     |  740 |          0.01 |  0.00 |  0.04 | Qwen3-14B-AWQ |
+| accidental  | R3       | utility  | 1180 |          0.14 |  0.03 |  0.26 | Qwen3-14B-AWQ |
+| accidental  | R3       | harm     | 1180 |         -0.05 | -0.12 |  0.00 | Qwen3-14B-AWQ |
+| adversarial | R3       | utility  |  740 |          0.25 |  0.12 |  0.40 | Qwen3-14B-AWQ |
+| adversarial | R3       | harm     |  740 |         -0.41 | -0.48 | -0.35 | Qwen3-14B-AWQ |

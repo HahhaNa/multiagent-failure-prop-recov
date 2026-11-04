@@ -1,4 +1,12 @@
 family,method,metric,n,delta_vs_R0,lo,hi,model
+accidental,R1,utility,935,0.2578,0.1615,0.3474,Qwen3-4B
+accidental,R1,harm,935,0.0000,0.0000,0.0000,Qwen3-4B
+adversarial,R1,utility,675,-0.0222,-0.1133,0.0588,Qwen3-4B
+adversarial,R1,harm,675,0.0104,0.0000,0.0309,Qwen3-4B
+accidental,R3,utility,935,-0.0139,-0.0905,0.0549,Qwen3-4B
+accidental,R3,harm,935,-0.0128,-0.0300,-0.0012,Qwen3-4B
+adversarial,R3,utility,675,-0.0059,-0.1376,0.0902,Qwen3-4B
+adversarial,R3,harm,675,-0.3259,-0.4177,-0.2350,Qwen3-4B
 accidental,R1,utility,1160,0.2664,0.1315,0.3971,Qwen3-8B
 accidental,R1,harm,1160,0.0000,0.0000,0.0000,Qwen3-8B
 adversarial,R1,utility,740,0.0054,-0.1716,0.1832,Qwen3-8B
@@ -7,3 +15,11 @@ accidental,R3,utility,1140,0.0439,-0.0916,0.1517,Qwen3-8B
 accidental,R3,harm,1140,-0.0263,-0.0559,0.0000,Qwen3-8B
 adversarial,R3,utility,735,0.1429,-0.0206,0.3000,Qwen3-8B
 adversarial,R3,harm,735,-0.3905,-0.4490,-0.3387,Qwen3-8B
+accidental,R1,utility,1180,0.3551,0.2237,0.4836,Qwen3-14B-AWQ
+accidental,R1,harm,1180,0.0000,0.0000,0.0000,Qwen3-14B-AWQ
+adversarial,R1,utility,740,0.0149,-0.1500,0.1541,Qwen3-14B-AWQ
+adversarial,R1,harm,740,0.0135,0.0000,0.0411,Qwen3-14B-AWQ
+accidental,R3,utility,1180,0.1432,0.0272,0.2585,Qwen3-14B-AWQ
+accidental,R3,harm,1180,-0.0466,-0.1174,0.0000,Qwen3-14B-AWQ
+adversarial,R3,utility,740,0.2514,0.1227,0.3974,Qwen3-14B-AWQ
+adversarial,R3,harm,740,-0.4081,-0.4767,-0.3459,Qwen3-14B-AWQ
