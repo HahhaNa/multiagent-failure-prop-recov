@@ -49,6 +49,11 @@ def main() -> None:
         agree = t[f"auto_{k}"] == t[f"manual_{k}"]
         summary.append({"label": k, "n": len(t), "agree": int(agree.sum()), "agreement": agree.mean(), "pass_90": agree.mean() >= 0.9,
                         "disagreeing_ids": ",".join(str(x) for x in t.id[~agree])})
+    x = t[t.task != "banking.user_task_9"]
+    for k in ("bad", "used"):
+        agree = x[f"auto_{k}"] == x[f"manual_{k}"]
+        summary.append({"label": f"{k} (without banking.user_task_9)", "n": len(x), "agree": int(agree.sum()), "agreement": agree.mean(),
+                        "pass_90": agree.mean() >= 0.9, "disagreeing_ids": ",".join(str(i) for i in x.id[~agree])})
     cc = c.dropna(subset=["auto_dependent"])
     agree = cc.auto_dependent.astype(bool) == cc.manual_dependent
     summary.append({"label": "call_dependent", "n": len(cc), "agree": int(agree.sum()), "agreement": agree.mean() if len(cc) else float("nan"),

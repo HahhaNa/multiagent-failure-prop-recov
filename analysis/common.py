@@ -43,6 +43,9 @@ def load(exp: str, root: Path | None = None) -> pd.DataFrame:
     df = pd.DataFrame(rows)
     if df.empty:
         return df
+    drop = [t for t in os.environ.get("FPR_EXCLUDE_TASKS", "").split(",") if t]
+    if drop:  # sensitivity analyses, e.g. FPR_EXCLUDE_TASKS=banking.user_task_9
+        df = df[~df.task.isin(drop)].reset_index(drop=True)
     df["kind"] = df["fault"].map(lambda f: "ref" if not isinstance(f, str) else ("clean" if str(f).startswith("CLEAN_") else "fault"))
     cond = conditions()
     df["point"] = df["fault"].map(lambda f: _point(f, cond))

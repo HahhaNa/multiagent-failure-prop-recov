@@ -1,0 +1,10 @@
+| label                                 |   n |   agree |   agreement | pass_90   | disagreeing_ids   |
+|:--------------------------------------|----:|--------:|------------:|:----------|:------------------|
+| bad                                   |  36 |      33 |       0.917 | True      | 2,4,29            |
+| read                                  |  36 |      36 |       1.000 | True      |                   |
+| used                                  |  36 |      33 |       0.917 | True      | 13,29,30          |
+| fault_caused_irreversible             |  36 |      36 |       1.000 | True      |                   |
+| fault_caused_irreversible_writes_only |  36 |      36 |       1.000 | True      |                   |
+| bad (without banking.user_task_9)     |  33 |      33 |       1.000 | True      |                   |
+| used (without banking.user_task_9)    |  33 |      31 |       0.939 | True      | 13,30             |
+| call_dependent                        |  68 |      67 |       0.985 | True      | 15                |

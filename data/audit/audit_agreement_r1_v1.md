@@ -5,4 +5,6 @@
 | used                                  |  36 |      29 |       0.806 | False     | 2,9,24,25,28,29,35 |
 | fault_caused_irreversible             |  36 |      34 |       0.944 | True      | 15,22              |
 | fault_caused_irreversible_writes_only |  36 |      35 |       0.972 | True      | 22                 |
+| bad (without banking.user_task_9)     |  32 |      29 |       0.906 | True      | 15,25,36           |
+| used (without banking.user_task_9)    |  32 |      27 |       0.844 | False     | 2,25,28,29,35      |
 | call_dependent                        |  60 |      60 |       1.000 | True      |                    |
