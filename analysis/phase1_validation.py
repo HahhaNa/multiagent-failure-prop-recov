@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
+
 from common import CLEAN_FOR, ROOT, boot_ci, load, out_dir, runs_root
 from phase1_counterfactual import closure, norm, origins
 
@@ -63,7 +64,7 @@ def extract(run_dir: str) -> dict:
                 origin_tool = e["call_id"]
                 continue
             if e["agent"] == "executor" and e["rev"] != "none" and e["name"] != "read_shared":
-                out["calls"].append({"node": f"tool:{e['call_id']}", "k": keys(e["name"], e["args"])})
+                out["calls"].append({"node": f"tool:{e['call_id']}", "k": keys(e["name"], e["args"]), "name": e["name"], "rev": e["rev"], "ok": not e["error"]})
         elif k == "artifact" and e["name"] == "findings" and point in ("R.tool", "R.start") and isinstance(e["content"], dict):
             out["claims"] = [{"node": f"claim:{c['claim_id']}", "k": claim_keys(c.get("value", ""))} for c in e["content"].get("claims", [])]
         elif k == "artifact" and e["name"] == "plan" and point in ("R.tool", "R.start", "R.out") and isinstance(e["content"], dict):
@@ -115,7 +116,8 @@ def artifact_matches(df: pd.DataFrame, ext: dict, samples: dict) -> pd.DataFrame
                             m[d].append(i)
                 rows.append({"task": r.task, "mode": r["mode"], "fault": r.fault, "family": r.family, "point": r.point, "level": kind[:-1],
                              "n_clean": len(runs), "declared": a["node"] in dec, "dataflow": a["node"] in flow, "taint": a["node"] in taint,
-                             "declared_taint": a["node"] in dec or a["node"] in taint, **{f"match_{d}": m[d] for d in DEFS}})
+                             "declared_taint": a["node"] in dec or a["node"] in taint, **{f"match_{d}": m[d] for d in DEFS},
+                             "branch_seed": r.branch_seed, "name": a.get("name"), "rev": a.get("rev"), "ok": a.get("ok", True)})
     return pd.DataFrame(rows)
 
 
@@ -162,6 +164,24 @@ def v2(a: pd.DataFrame, kmax: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def v7_irreversible(a: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
+    """Amendment 3 (post-hoc): share of injected branches with >= 1 fault-caused irreversible/compensable external
+    effect under E1-E3, per family and point (k=5)."""
+    tools = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
+    ext = {n for s in tools.values() for n, v in s.get("write", {}).items() if v.get("external")} | {n for s in tools.values() for n in s.get("read_external", [])}
+    key = ["task", "mode", "fault", "branch_seed"]
+    c = a[(a.level == "call") & a.ok & a.rev.isin(["irreversible", "compensable"]) & a.name.isin(ext)]
+    f = df[(df.kind == "fault") & df.injected & df.family.isin(["accidental", "adversarial"])]
+    rows = []
+    for d in DEFS:
+        hit = set(map(tuple, c[c[f"match_{d}"].map(lambda m: not any(i < 5 for i in m))][key].values.tolist()))
+        x = f.assign(fc=[k in hit for k in zip(f.task, f["mode"], f.fault, f.branch_seed)])
+        for (fam, pt), g in x.groupby(["family", "point"]):
+            lo, hi = boot_ci(g, lambda t: t.fc.mean())
+            rows.append({"definition": d, "family": fam, "point": pt, "n": len(g), "share_fault_caused": g.fc.mean(), "ci_lo": lo, "ci_hi": hi})
+    return pd.DataFrame(rows).pivot_table(index=["family", "point", "n"], columns="definition", values="share_fault_caused").reset_index()
+
+
 def v5() -> pd.DataFrame:
     sel = yaml.safe_load((ROOT / "configs/tasks_selected.yaml").read_text())
     rate = sel["pass_rate"]
@@ -191,8 +211,8 @@ def main() -> None:
         ext = {x["run_dir"]: x for x in p.map(extract, df[df.kind.isin(["fault", "clean", "ref"])].run_dir.tolist(), chunksize=16)}
     arts = artifact_matches(df, ext, clean_samples(df))
     d = out_dir(f"tables/validation_{a.exp}")
-    t1, t2, t5 = v1(arts, 5), v2(arts, kmax), v5()
-    for name, t in (("v1_equivalence", t1), ("v2_k_sensitivity", t2), ("v5_task_selection", t5)):
+    t1, t2, t5, t7 = v1(arts, 5), v2(arts, kmax), v5(), v7_irreversible(arts, df)
+    for name, t in (("v1_equivalence", t1), ("v2_k_sensitivity", t2), ("v5_task_selection", t5), ("v7_irreversible_by_definition_posthoc", t7)):
         t.to_csv(d / f"{name}.csv", index=False, float_format="%.4f")
         (d / f"{name}.md").write_text(t.to_markdown(index=False, floatfmt=".3f"))
     print(t1.round(3).to_string())
