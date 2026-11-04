@@ -11,6 +11,7 @@ from .agents.executor import execute
 from .agents.planner import plan as make_plan
 from .agents.researcher import research
 from .agents.schemas import UNAVAILABLE
+from .agents.verifier import evidence, guard, verify_findings, verify_plan
 from .env.agentdojo_adapter import TaskEnv
 from .env.blackboard import FINDINGS, PLAN, Blackboard
 from .env.clock import VirtualClock
@@ -44,6 +45,7 @@ class EpisodeConfig:
     tool_output_chars: int = 6000
     expect_replay: bool = False
     single_tool_calls: bool = False
+    verify: bool = False  # R3 verify-all mode
 
 
 @dataclass
@@ -103,6 +105,13 @@ class Episode:
         self.log.emit("unavailable", {"stage": "planner"})
         return None
 
+    def _gate(self, plan_json: dict):
+        async def gate(name: str, args: dict) -> str | None:
+            v = await guard(self.ctx, plan_json, name, args)
+            return None if v.allow else (v.reason or "denied")
+
+        return gate
+
     async def run(self) -> dict:
         c, mode = self.cfg, self.cfg.mode
         t_wall = time.perf_counter()
@@ -114,8 +123,17 @@ class Episode:
             fj = as_json(findings)
             vid = self.bb.write(FINDINGS, fj, "researcher")
             self._artifact("findings", "researcher", fj, vid)
+            ev = evidence(self.log.events) if c.verify else ""
+            if c.verify:
+                if mode == "state":
+                    self.bb.read(FINDINGS, "verifier")
+                fj, rec = await verify_findings(self.ctx, fj, ev)
+                self.log.emit("verify", rec)
+                if rec["changed"]:
+                    vid = self.bb.write(FINDINGS, fj, "verifier")
+                self._artifact("findings_verified", "verifier", fj, vid)
             if mode == "message":
-                self.log.emit("message", {"from": "researcher", "to": "planner", "artifact": "findings", "version": vid})
+                self.log.emit("message", {"from": "verifier" if c.verify else "researcher", "to": "planner", "artifact": "findings", "version": vid})
             plan = await self._planner(mode, fj)
             if plan is None:
                 pj = dict(UNAVAILABLE)
@@ -131,9 +149,18 @@ class Episode:
                 if poisoned is not None:
                     pvid = self.bb.write(PLAN, poisoned, "attacker" if self.fault.family == "adversarial" else "corruption")
                     self.log.emit("poison", {"obj": "bb:" + PLAN, "version": pvid})
-            else:
-                self.log.emit("message", {"from": "planner", "to": "executor", "artifact": "plan", "version": vid})
-            report = await execute(self.ctx, mode, pj, c.turns["executor"], on_return=self.inj.e_tool, on_args=self.inj.e_args)
+            gate = None
+            if c.verify:
+                cur = self.bb.read(PLAN, "verifier")[0] if mode == "state" else pj
+                pj, rec = await verify_plan(self.ctx, cur, fj, ev)
+                self.log.emit("verify", rec)
+                if mode == "state" and rec["changed"]:
+                    vid = self.bb.write(PLAN, pj, "verifier")
+                self._artifact("plan_verified", "verifier", pj, vid)
+                gate = self._gate(pj)
+            if mode == "message":
+                self.log.emit("message", {"from": "verifier" if c.verify else "planner", "to": "executor", "artifact": "plan", "version": vid})
+            report = await execute(self.ctx, mode, pj, c.turns["executor"], on_return=self.inj.e_tool, on_args=self.inj.e_args, guard=gate)
         except CacheMiss:
             raise
         except Exception as e:  # noqa: BLE001 - recorded as a stall; the run is kept

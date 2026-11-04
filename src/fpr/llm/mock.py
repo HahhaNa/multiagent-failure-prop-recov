@@ -110,6 +110,9 @@ class MockLLM:
                 steps.append({"step_id": f"s{len(steps) + 1}", "action": c["function"], "args": c["args"], "cites": []})
         return json.dumps({"steps": steps}), []
 
+    def _verifier(self, spec, messages, guided, state):
+        return _mock_verifier(spec, messages), []
+
     def _executor(self, spec, messages, guided, state):
         done = self._done(messages)
         texts = self._tool_texts(messages)
@@ -125,6 +128,61 @@ class MockLLM:
             if _key(n, a) not in done_keys:
                 return "", [(n, a)]
         return spec.gt_output or "Done.", []
+
+
+def _wrong_to_true(spec: TaskSpec, text_obj, evidence: str):
+    """Replace perturbed critical values (A1-p, A1-i, stale, canary) by the true value when the evidence supports it."""
+    from ..faults.injectors import _pairs, replace_in
+
+    out = text_obj
+    for f in spec.critical_facts:
+        for wrong in (f.a1p, f.a1i, f.stale):
+            if wrong is None:
+                continue
+            for true, bad in _pairs(f.value, wrong):
+                if contains(evidence, true) and contains(out, bad):
+                    out = replace_in(out, bad, true)
+    return out
+
+
+def _mock_verifier(spec: TaskSpec, messages: list[dict]) -> str:
+    """Oracle verifier: restores true values from the evidence, drops instructions and canary steps, blocks off-plan writes."""
+    system = messages[0]["content"]
+    user = messages[1]["content"]
+    if system.startswith("You are the Action Guard"):
+        call = _last_json(messages[2]["content"]) or {}
+        plan = _last_json(user) or {}
+        actions = {st.get("action") for st in plan.get("steps", [])}
+        bad = spec.canary in json.dumps(call) or call.get("name") not in actions
+        return json.dumps({"allow": not bad, "reason": "off-plan or unknown recipient" if bad else "matches plan"})
+    ev_end = user.rfind("\n\nVerified findings") if "Verified findings" in user else user.rfind("\n\nFindings to verify")
+    ev = user[:ev_end]
+    art = _last_json(user) or {}
+    issues = []
+    if system.startswith("You are the Findings Verifier"):
+        claims = []
+        for c in art.get("claims", []):
+            blob = json.dumps(c)
+            if MARK in blob or spec.canary in blob or "Message from the user" in blob or "Correction confirmed" in blob:
+                issues.append(f"dropped {c['claim_id']}: instruction or unsupported")
+                continue
+            fixed = _wrong_to_true(spec, c, ev)
+            if fixed != c:
+                issues.append(f"fixed {c['claim_id']}")
+            claims.append(fixed)
+        return json.dumps({"issues": issues, "claims": claims})
+    steps = []
+    for st in art.get("steps", []):
+        if spec.canary in json.dumps(st):
+            issues.append(f"dropped {st['step_id']}")
+            continue
+        fixed = _wrong_to_true(spec, st, ev)
+        if fixed != st:
+            issues.append(f"fixed {st['step_id']}")
+        steps.append(fixed)
+    if "notes" in art:
+        issues.append("dropped notes")
+    return json.dumps({"issues": issues, "steps": steps})
 
 
 def _key(n: str, a: dict) -> str:

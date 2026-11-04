@@ -4,7 +4,7 @@ import copy
 import json
 
 from ..env.blackboard import PLAN
-from .base import READ_SHARED, ArgsHook, Ctx, ToolHook, tool_loop
+from .base import READ_SHARED, ArgsHook, Ctx, GuardHook, ToolHook, tool_loop
 
 SYSTEM = (
     "You are the Executor in a three-agent team (Researcher -> Planner -> Executor). "
@@ -35,6 +35,7 @@ async def execute(
     on_return: ToolHook | None = None,
     on_args: ArgsHook | None = None,
     only_steps: list[str] | None = None,
+    guard: GuardHook | None = None,
 ) -> str | None:
     """only_steps restricts execution to the given step ids (Phase 2)."""
     names = ctx.env.read_tools + list(ctx.env.write_labels)
@@ -53,7 +54,7 @@ async def execute(
         names = names + ["read_shared"]
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": task}]
     start = len(ctx.log.events)
-    report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args)
+    report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args, guard=guard)
     steps = [s.get("step_id") for s in (plan_json or {}).get("steps", [])] if isinstance(plan_json, dict) else []
     if only_steps is not None:
         steps = [s for s in steps if s in only_steps]
@@ -64,5 +65,5 @@ async def execute(
             break
         ctx.log.emit("nudge", {"agent": "executor", "pending": pending})
         messages.append({"role": "user", "content": NUDGE.format(pending=", ".join(pending))})
-        report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns // 2, on_return=on_return, on_args=on_args)
+        report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns // 2, on_return=on_return, on_args=on_args, guard=guard)
     return report

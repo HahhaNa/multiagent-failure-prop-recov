@@ -1,7 +1,7 @@
 """Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
 
 Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
-Stages: screen0 screen1 screen_all select pilot primary main cross status
+Stages: screen0 screen1 screen_all select pilot primary main verify_pilot verify cross status
 """
 
 import argparse
@@ -115,12 +115,13 @@ def primary_matrix(tasks: list[str], k: int = 3, core_only: bool = False, modes:
 
 
 class Runner:
-    def __init__(self, llm, cfg: dict, specs: dict[str, TaskSpec], model_alias: str, model_name: str, concurrency: int, root: Path):
+    def __init__(self, llm, cfg: dict, specs: dict[str, TaskSpec], model_alias: str, model_name: str, concurrency: int, root: Path, verify: bool = False):
         self.llm, self.cfg, self.specs = llm, cfg, specs
+        self.verify = verify
         self.model_alias, self.model_name = model_alias, model_name
         self.root = root
         self.sem = asyncio.Semaphore(concurrency)
-        self.manifest = base_manifest(cfg, model_alias)
+        self.manifest = {**base_manifest(cfg, model_alias), "verify": verify}
         models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
         self.single_tool_calls = bool(models.get(model_alias, {}).get("single_tool_calls", False))
         self.stats = {"done": 0, "skipped": 0, "failed": 0, "live_calls": 0, "t0": time.time()}
@@ -149,7 +150,7 @@ class Runner:
                 spec=self.specs[r.task], mode=r.mode, fault_id=r.fault, ref_seed=r.ref_seed, branch_seed=r.branch_seed,
                 model=self.model_name, temperature=c["temperature"], max_tokens=c["max_tokens"], version=c["benchmark_version"],
                 turns=c["turns"], clock=c["clock"], tool_output_chars=c["tool_output_chars"], expect_replay=r.fault is not None,
-                single_tool_calls=self.single_tool_calls,
+                single_tool_calls=self.single_tool_calls, verify=self.verify,
             )
             man = {**self.manifest, "run": r.__dict__, "seed": r.ref_seed, "branch_seed": r.branch_seed, "start": datetime.now().isoformat()}
             (d / "manifest.json").write_text(json.dumps(man, indent=1))
@@ -238,7 +239,7 @@ def main() -> None:
     ap.add_argument("--model", default="qwen3-8b")
     ap.add_argument("--mock", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
-    ap.add_argument("--k", type=int, default=3)
+    ap.add_argument("--k", type=int, default=0)
     ap.add_argument("--core-only", action="store_true")
     ap.add_argument("--modes", default="")
     ap.add_argument("--exp", default="")
@@ -278,9 +279,15 @@ def main() -> None:
         fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
         runs = expand(a.exp or "pilot", tasks, modes, [0], conditions(include_controls=True), fc["clean_points"], [cfg["branch_seeds"][0]])
     elif a.stage == "primary":
-        runs = primary_matrix(selected, k=a.k, core_only=a.core_only, modes=modes, exp=a.exp or "primary")
+        runs = primary_matrix(selected, k=a.k or 3, core_only=a.core_only, modes=modes, exp=a.exp or "primary")
     elif a.stage == "main":
         runs = primary_matrix(selected, k=5, modes=modes, exp=a.exp or "main")
+    elif a.stage == "verify_pilot":  # PLAN2 4: mini pilot, 5 tasks, k=1, clean refs only
+        runs = expand(a.exp or "verify_pilot", selected[:: max(1, len(selected) // 5)][:5], modes, [0], [], [], [])
+    elif a.stage == "verify":
+        fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
+        k = a.k or 5
+        runs = expand(a.exp or "verify", selected, modes, cfg["ref_seeds"][:k], conditions(include_controls=True), fc["clean_points"], cfg["branch_seeds"][:k])
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:
@@ -288,7 +295,7 @@ def main() -> None:
     if a.limit:
         runs = runs[: a.limit]
     llm, model_name = make_llm(a, cfg, specs)
-    r = Runner(llm, cfg, specs, "mock" if a.mock else a.model, model_name, cfg["concurrency"], root)
+    r = Runner(llm, cfg, specs, "mock" if a.mock else a.model, model_name, cfg["concurrency"], root, verify=a.stage.startswith("verify"))
     (root / "logs").mkdir(parents=True, exist_ok=True)
     print(f"{a.stage}: {len(runs)} runs, {sum(1 for x in runs if r.is_done(x))} already done", flush=True)
     log_name = a.exp or ("screen" if a.stage.startswith("screen") else a.stage)

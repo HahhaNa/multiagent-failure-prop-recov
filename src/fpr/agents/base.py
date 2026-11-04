@@ -1,7 +1,7 @@
 """Shared LLM call and tool loop used by all agents."""
 
 import json
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -119,6 +119,7 @@ def parse_args(raw: str) -> tuple[dict, str | None]:
 
 ToolHook = Callable[[str, dict, str], str]
 ArgsHook = Callable[[str, dict], dict]
+GuardHook = Callable[[str, dict], Awaitable[str | None]]  # returns a block reason or None
 
 
 async def tool_loop(
@@ -130,6 +131,7 @@ async def tool_loop(
     max_turns: int,
     on_return: ToolHook | None = None,
     on_args: ArgsHook | None = None,
+    guard: GuardHook | None = None,
 ) -> tuple[str | None, list[dict]]:
     """Run tool turns until the model answers without tool calls. Returns (final text or None, messages)."""
     for _ in range(max_turns):
@@ -148,8 +150,11 @@ async def tool_loop(
                 args = on_args(tc.name, args)
             reads: list[str] = []
             writes: list[str] = []
+            blocked = await guard(tc.name, args) if guard is not None and err is None and tc.name in ctx.env.write_labels else None
             if err:
                 result = err
+            elif blocked is not None:
+                result, err = f"Blocked by verifier: {blocked}", "blocked_by_verifier"
             elif tc.name == "read_shared":
                 path = str(args.get("path", ""))
                 result = ctx.bb.read_text(path, agent) if "read_shared" in allowed else "ToolNotFoundError"
