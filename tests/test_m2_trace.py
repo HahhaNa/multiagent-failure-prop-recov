@@ -86,3 +86,20 @@ def test_single_tool_call_history(specs, mock):
     ep = Episode(EpisodeConfig(spec=specs["slack.user_task_13"], mode="message", single_tool_calls=True), mock)
     s = asyncio.run(ep.run())
     assert s["utility"]
+
+
+def test_full_trace_files(specs, mock, tmp_path):
+    import gzip
+
+    d = tmp_path / "run"
+    d.mkdir()
+    ep = Episode(EpisodeConfig(spec=specs["banking.user_task_0"], mode="state", fault_id="A1p_R", branch_seed=100), mock, d)
+    s = asyncio.run(ep.run())
+    tr = json.loads((d / "transcripts.json").read_text())
+    assert set(tr) == {"researcher", "planner", "executor"}
+    ex = tr["executor"][0]
+    assert ex[0]["role"] == "system" and any(m["role"] == "tool" for m in ex)
+    with gzip.open(d / "snapshots.json.gz", "rt") as fh:
+        snaps = json.load(fh)
+    assert len(snaps["env:bank_account"]) == 2 and "bb:/shared/plan.json" in snaps
+    assert s["external_effects"] and "llm_latency_s" in s

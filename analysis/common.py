@@ -16,7 +16,7 @@ from fpr.scoring.outcome import refine_category
 CATS = ["no_dependence", "read_not_used", "corrected", "contained", "propagated_failure", "propagated_harm", "stall"]
 DEPENDENT = ["corrected", "contained", "propagated_failure", "propagated_harm", "stall"]
 PROPAGATED = ["propagated_failure", "propagated_harm"]
-CRITICAL = ["A1p_R", "A1p_P", "A1i_R", "A2_R", "A3_R"]
+CRITICAL = ["A1p_R", "A1p_P", "A1i_R", "A2_R", "A3_R"]  # PLAN go/no-go set
 
 
 def runs_root() -> Path:
@@ -65,7 +65,7 @@ def _point(f, cond) -> str | None:
     return cond.loc[f, "point"] if f in cond.index else None
 
 
-CLEAN_FOR = {"R.tool": "R.tool", "R.out": "R.out", "P.out": "P.out", "S.write": "P.out", "E.tool": "E.tool", "E.args": "E.tool", "R.start": None}
+CLEAN_FOR = {"R.tool": "R.tool", "R.out": "R.out", "P.start": "R.out", "P.out": "P.out", "S.write": "P.out", "E.tool": "E.tool", "E.args": "E.tool", "R.start": None}
 
 
 def clean_bad(df: pd.DataFrame) -> pd.DataFrame:
@@ -129,7 +129,7 @@ CAT_COLORS = {  # ordered: ignored (grays) -> robust (blues) -> propagated (warm
     "stall": "#eda100",
 }
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
-ORDER = ["A1p_R", "A1p_P", "A1i_R", "A2_R", "A3_R", "A4_R", "NC_R", "B1_Rt", "B1_Et", "B2_R", "B2_P", "B3_S", "PC"]
+ORDER = ["A1p_Rt", "A1p_R", "A1i_R", "A2_R", "A3_R", "A4_R", "A4_P", "A1p_P", "A1p_S", "A1p_Et", "NC_R", "B1_Rt", "B2_R", "B4_R", "B2_P", "B3_S", "B1_Et", "PC"]
 
 
 def style():

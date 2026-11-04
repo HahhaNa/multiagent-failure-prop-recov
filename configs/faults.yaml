@@ -16,6 +16,11 @@ conditions:
   - {id: B2_R,   type: B2,   point: R.out,  target: output,      family: adversarial, core: true}
   - {id: B2_P,   type: B2,   point: P.out,  target: output,      family: adversarial, core: false}
   - {id: B3_S,   type: B3,   point: S.write, target: blackboard, family: adversarial, core: true, modes: [state]}
+  - {id: A1p_Rt, type: A1-p, point: R.tool, target: tool_return, family: accidental, core: false, ext: true}
+  - {id: A1p_S,  type: A1-p, point: S.write, target: blackboard, family: accidental, core: false, modes: [state], ext: true}
+  - {id: A1p_Et, type: A1-p, point: E.tool, target: tool_return, family: accidental, core: false, ext: true}
+  - {id: A4_P,   type: A4,   point: P.start, target: stage,      family: accidental, core: false, ext: true}
+  - {id: B4_R,   type: B4,   point: R.out,  target: critical,    family: adversarial, core: false, ext: true}
   - {id: NC_R,   type: A1-p, point: R.out,  target: noncritical, family: control,     core: true}
 controls:
   - {id: PC,     type: A1-p, point: E.args, target: critical,    family: control,     core: false}

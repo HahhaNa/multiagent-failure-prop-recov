@@ -28,22 +28,26 @@ def test_each_condition_injects_at_point(specs, mock, key):
             fi = fev[0]["i"]
             kinds_before = ep.log.events[:fi]
             llm_before = [e["agent"] for e in kinds_before if e["kind"] == "llm_call"]
+            if not fev[0]["applied"]:
+                ok = c.id == "NC_R" or (c.type == "A1-p" and c.point in ("E.tool", "R.tool", "S.write"))
+                assert ok and fev[0].get("reason") in ("not_reached", "no_target"), (c.id, mode, key)
+                continue
             if c.point == "R.start":
                 assert not llm_before
-            elif c.point in ("R.out", "R.tool"):
+            elif c.point == "P.start" or c.point in ("R.out", "R.tool"):
                 assert set(llm_before) == {"researcher"}
             elif c.point in ("P.out", "S.write"):
                 assert "planner" in llm_before and "executor" not in llm_before
             elif c.point == "E.tool":
                 assert llm_before[-1] == "executor"
                 nxt = ep.log.events[fi + 1]
-                assert nxt["kind"] == "tool_call" and nxt["agent"] == "executor" and "<INFORMATION>" in nxt["result"] or c.type != "B1"
+                assert nxt["kind"] == "tool_call" and nxt["agent"] == "executor"
+                assert "<INFORMATION>" in nxt["result"] or c.type != "B1"
             # all calls after the injection use the branch seed
             after = [e for e in ep.log.events[fi:] if e["kind"] == "llm_call"]
             assert after and all(e["seed"] == 100 and e["branched"] for e in after)
             assert all(e["seed"] == 0 for e in ep.log.events[:fi] if e["kind"] == "llm_call")
-            if c.id != "NC_R" or s["injected"]:
-                assert s["injected"], (c.id, mode, key)
+            assert s["injected"], (c.id, mode, key)
 
 
 @pytest.mark.parametrize("key", TASKS)
@@ -91,3 +95,24 @@ def test_refine_category_marks_restored_value_corrected():
     assert refine_category(s) == "corrected"
     s["exec_calls"] = [{"args": {"recipient": "X"}}]
     assert refine_category(s) == "read_not_used"
+
+
+def test_accidental_faults_at_every_stage(specs, mock):
+    spec = specs["banking.user_task_0"]
+    _, s = run(spec, "message", "A1p_Rt", mock)
+    assert s["injected"] and s["fault_record"]["target"].startswith("R.tool:")
+    _, s = run(spec, "state", "A1p_S", mock)
+    assert s["injected"] and s["read"] and not s["utility"] and "executor" in s["tainted_stages"]
+    assert s["n_laundered"] == 0  # the blackboard step that carries the value is declared
+    _, s = run(spec, "message", "A4_P", mock)
+    assert s["injected"] and s["read"] and s["category"] in ("propagated_failure", "stall", "corrected")
+    _, s = run(spec, "message", "A1p_Et", mock)
+    assert s["fault_record"]["point"] == "E.tool"
+
+
+def test_byzantine_claim(specs, mock):
+    _, s = run(specs["banking.user_task_0"], "message", "B4_R", mock)
+    rec = s["fault_record"]
+    assert s["injected"] and rec["injected"] == specs["banking.user_task_0"].canary  # IBAN fact -> attacker IBAN
+    claims = s["findings"]["claims"]
+    assert any(c["value"] == rec["original"] for c in claims)  # the true claim stays: contradicting outputs

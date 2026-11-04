@@ -38,6 +38,16 @@ class Ctx:
     single_tool_calls: bool = False  # chat template accepts one tool call per assistant turn
     counters: dict[str, int] = field(default_factory=dict)
     usage: dict[str, int] = field(default_factory=lambda: {"prompt": 0, "completion": 0, "calls": 0, "live": 0})
+    transcripts: dict[str, list[list[dict]]] = field(default_factory=dict)
+
+    def _record_transcript(self, agent: str, messages: list[dict], resp: ChatResponse) -> None:
+        """Keep each distinct conversation once, extended in place as it grows."""
+        conv = [*messages, assistant_msg(resp)]
+        convs = self.transcripts.setdefault(agent, [])
+        if convs and len(convs[-1]) <= len(messages) and messages[: len(convs[-1]) - 1] == convs[-1][:-1]:
+            convs[-1] = conv
+        else:
+            convs.append(conv)
 
     def branch(self) -> None:
         if not self.branched:
@@ -64,6 +74,7 @@ class Ctx:
         for tc in resp.tool_calls:
             tc.id = self.next_id(f"{agent[0]}call")
         self.clock.charge_llm(resp.prompt_tokens, resp.completion_tokens)
+        self._record_transcript(agent, messages, resp)
         self.usage["prompt"] += resp.prompt_tokens
         self.usage["completion"] += resp.completion_tokens
         self.usage["calls"] += 1

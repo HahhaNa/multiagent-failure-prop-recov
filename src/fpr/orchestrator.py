@@ -1,5 +1,6 @@
 """Runs one researcher -> planner -> executor episode with optional fault injection."""
 
+import gzip
 import json
 import time
 from dataclasses import dataclass, field
@@ -14,6 +15,7 @@ from .env.agentdojo_adapter import TaskEnv
 from .env.blackboard import FINDINGS, PLAN, Blackboard
 from .env.clock import VirtualClock
 from .env.external_world import ExternalWorld
+from .env.snapshots import dump
 from .env.state_store import StateStore
 from .faults.injectors import Injector, as_json
 from .faults.payloads import injection_text
@@ -91,6 +93,16 @@ class Episode:
         self.log.emit("unavailable", {"stage": "researcher"})
         return dict(UNAVAILABLE)
 
+    async def _planner(self, mode: str, fj: dict):
+        for attempt in (1, 2):
+            if self.inj.timeout("planner", attempt):
+                self.clock.advance(self.timeout_s, "timeout")
+                self.log.emit("stage_timeout", {"stage": "planner", "attempt": attempt, "injected": True})
+                continue
+            return await make_plan(self.ctx, mode, fj, self.cfg.turns["planner"])
+        self.log.emit("unavailable", {"stage": "planner"})
+        return None
+
     async def run(self) -> dict:
         c, mode = self.cfg, self.cfg.mode
         t_wall = time.perf_counter()
@@ -104,16 +116,20 @@ class Episode:
             self._artifact("findings", "researcher", fj, vid)
             if mode == "message":
                 self.log.emit("message", {"from": "researcher", "to": "planner", "artifact": "findings", "version": vid})
-            plan = await make_plan(self.ctx, mode, fj, c.turns["planner"])
-            self._artifact("plan_raw", "planner", plan.model_dump())
-            plan = self.inj.p_out(plan)
-            pj = as_json(plan)
+            plan = await self._planner(mode, fj)
+            if plan is None:
+                pj = dict(UNAVAILABLE)
+                self._artifact("plan_raw", "planner", pj)
+            else:
+                self._artifact("plan_raw", "planner", plan.model_dump())
+                plan = self.inj.p_out(plan)
+                pj = as_json(plan)
             vid = self.bb.write(PLAN, pj, "planner")
             self._artifact("plan", "planner", pj, vid)
             if mode == "state":
                 poisoned = self.inj.s_write(pj)
                 if poisoned is not None:
-                    pvid = self.bb.write(PLAN, poisoned, "attacker")
+                    pvid = self.bb.write(PLAN, poisoned, "attacker" if self.fault.family == "adversarial" else "corruption")
                     self.log.emit("poison", {"obj": "bb:" + PLAN, "version": pvid})
             else:
                 self.log.emit("message", {"from": "planner", "to": "executor", "artifact": "plan", "version": vid})
@@ -135,6 +151,10 @@ class Episode:
             self.log.flush()
             (self.run_dir / "artifacts.json").write_text(json.dumps(self.artifacts, indent=1, default=str))
             (self.run_dir / "summary.json").write_text(json.dumps(summary, indent=1, default=str))
+            (self.run_dir / "transcripts.json").write_text(json.dumps(self.ctx.transcripts, default=str))
+            snaps = {o: [{"vid": v.vid, "writer": v.writer, "digest": v.digest, "bytes": v.size, "value": dump(v.value)} for v in vs] for o, vs in self.store.versions.items()}
+            with gzip.open(self.run_dir / "snapshots.json.gz", "wt") as fh:
+                json.dump(snaps, fh, default=str)
             g = build_graphs(self.log.events, self.inj.taint_values())
             (self.run_dir / "graphs.json").write_text(json.dumps(g, default=str))
         return summary

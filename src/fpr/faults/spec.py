@@ -13,6 +13,7 @@ class FaultSpec(BaseModel):
     family: str = "clean"
     core: bool = False
     modes: list[str] = ["message", "state"]
+    ext: bool = False  # extension beyond the 12 PLAN conditions
 
     @property
     def is_clean(self) -> bool:
