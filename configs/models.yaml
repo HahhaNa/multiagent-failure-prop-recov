@@ -45,3 +45,8 @@ qwen3-14b:
   revision: 31c69efc29464b6bb0aee1398b5a7b50a99340c3
   quantization: awq-checkpoint
   tool_parser: hermes
+hermes3-8b:
+  repo: NousResearch/Hermes-3-Llama-3.1-8B
+  revision: 896ea440e5a9e6070e3d8a2774daf2b481ab425b
+  quantization: fp8-runtime
+  tool_parser: hermes
