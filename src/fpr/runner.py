@@ -121,7 +121,11 @@ RECOVERY_SEED0 = 200
 def prior_effects(run_dir: Path) -> list[dict]:
     """External effects of a finished faulted run, in order, with taint flags."""
     s = json.loads((run_dir / "summary.json").read_text())
-    return mark_tainted(s.get("external_effects") or [], taint_from_record(s.get("fault_record") or {}))
+    effects = s.get("external_effects")
+    if effects is None:  # runs from before summaries recorded effects: read the external-world events
+        ev = [json.loads(x) for x in (run_dir / "events.jsonl").read_text().splitlines()]
+        effects = [{"tool": e["tool"], "args": e["args"], "rev": e["rev"]} for e in ev if e["kind"] == "external_effect"]
+    return mark_tainted(effects, taint_from_record(s.get("fault_record") or {}))
 
 
 def restart_matrix(root: Path, src_exp: str = "main", exp: str = "restart", faults: list[str] | None = None) -> list[RunSpec]:

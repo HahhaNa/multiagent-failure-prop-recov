@@ -72,3 +72,16 @@ def test_restart_matrix_from_runs(specs, mock, tmp_path):
         assert s["n_llm_calls"] > 0 and s["prefix_misses"] == 0 and man["run"]["recover_from"]
         src = json.loads((tmp_path / "main" / x.task / x.mode / x.name / "summary.json").read_text())
         assert s["n_prior_effects"] == len(src["external_effects"])
+
+
+def test_prior_effects_fall_back_to_events(specs, mock, tmp_path):
+    from fpr.runner import prior_effects
+
+    d = tmp_path / "run"
+    d.mkdir()
+    ep = Episode(EpisodeConfig(spec=specs[BANK], mode="message", fault_id="B2_P", branch_seed=100), mock, d)
+    s = asyncio.run(ep.run())
+    full = prior_effects(d)
+    s.pop("external_effects")
+    (d / "summary.json").write_text(json.dumps(s, default=str))
+    assert prior_effects(d) == full and len(full) == 2 and any(e["tainted"] for e in full)
