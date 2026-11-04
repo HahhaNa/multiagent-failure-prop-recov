@@ -104,17 +104,15 @@ effect before any recovery, by injection stage. (b, c) Utility and residual harm
 | W4–W5 Analysis | counterfactual dependence, graph accuracy, irreversibility, recovery, all figures with CIs | done |
 | W6 Robustness | harder tasks, T=0 noise floor, CPU vs GPU latency, cross-family recovery | done |
 | W7 Submission | README, report, data export, fresh-clone check | done |
-| W8 Breadth | full matrix on Qwen3-4B (done), Qwen3-14B and other 8B families (gate) | in progress |
-| W9 Validation | pre-registration, 3 label audits, equivalence and k sensitivity, statistics, task-selection record | in progress |
+| W8 Breadth | full matrix on Qwen3-4B and Qwen3-14B; four 8B models of other families screened, none passed the clean-success gate | done |
+| W9 Validation | pre-registration, 3 blind label audits, equivalence, k = 10 and prefix checks, statistics, task-selection record | done |
 
-**Phase 2 (planned)**
+**Phase 2 (planned; details and pre-registered thresholds in `docs/revised_plan.md`)**
 
-| Week | Milestone | Deliverable |
+| Week of | Milestone | Done means |
 |---|---|---|
-| 1 | R2 rollback-to-fault baseline | whole-snapshot restore + rerun, same fault schedules |
-| 2–3 | Selective recovery R4a (declared graph) and R4b (data-flow + taint) | per-object restore, compensation, partial replanning, executor runs only changed steps, valid calls replayed from cache |
-| 3 | Validity check | reuse precision and invalidation recall against the Phase 1 counterfactual artifact table |
-| 4 | Drift scenario | legitimate world changes before recovery; clobbered changes R2 vs R4b |
-| 4–5 | Early detection hook | trigger recovery in the 8–24-step window of upstream faults, before the first irreversible effect |
-| 5 | Cross-model replication | recovery comparison on the Phase 1 model set |
-| 6 | Final report | correctness, residual harm, unrecoverable effects, duplicates and cost per method |
+| Nov 9 | Tool relabeling; R2 rollback; spotlighting and tool-output filter baselines; cross-model verifier | baselines run on the main fault schedule; MockLLM acceptance tests pass |
+| Nov 16 | Selective recovery with counterfactual probing of uncertain edges, per-object restore, compensation | MockLLM acceptance tests; zero duplicated effects on mock |
+| Nov 23 | Real runs: recall–cost frontier, ablations, all baselines | runs complete; 10% of branches spot-checked against traces |
+| Nov 30 | Analysis and label audit of Phase 2 labels | pre-registered criteria evaluated as passed or failed |
+| Dec 7 | Final report (4–6 pages) | every number traced to a table, script and run subset |
