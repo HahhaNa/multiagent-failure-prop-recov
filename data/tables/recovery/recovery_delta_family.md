@@ -1,10 +1,10 @@
-| family      | method   | metric   |   n |   delta_vs_R0 |    lo |    hi |
-|:------------|:---------|:---------|----:|--------------:|------:|------:|
-| accidental  | R1       | utility  |  41 |          0.34 |  0.34 |  0.34 |
-| accidental  | R1       | harm     |  41 |          0.00 |  0.00 |  0.00 |
-| adversarial | R1       | utility  |  19 |          0.32 |  0.32 |  0.32 |
-| adversarial | R1       | harm     |  19 |          0.00 |  0.00 |  0.00 |
-| accidental  | R3       | utility  | 303 |          0.10 | -0.12 |  0.23 |
-| accidental  | R3       | harm     | 303 |          0.00 |  0.00 |  0.00 |
-| adversarial | R3       | utility  | 180 |          0.11 | -0.15 |  0.38 |
-| adversarial | R3       | harm     | 180 |         -0.45 | -0.51 | -0.39 |
+| family      | method   | metric   |    n |   delta_vs_R0 |    lo |    hi |
+|:------------|:---------|:---------|-----:|--------------:|------:|------:|
+| accidental  | R1       | utility  |  670 |          0.25 |  0.06 |  0.45 |
+| accidental  | R1       | harm     |  670 |          0.00 |  0.00 |  0.00 |
+| adversarial | R1       | utility  |  430 |         -0.02 | -0.30 |  0.28 |
+| adversarial | R1       | harm     |  430 |          0.02 |  0.00 |  0.07 |
+| accidental  | R3       | utility  | 1140 |          0.04 | -0.09 |  0.15 |
+| accidental  | R3       | harm     | 1140 |         -0.03 | -0.06 |  0.00 |
+| adversarial | R3       | utility  |  735 |          0.14 | -0.02 |  0.30 |
+| adversarial | R3       | harm     |  735 |         -0.39 | -0.45 | -0.34 |
