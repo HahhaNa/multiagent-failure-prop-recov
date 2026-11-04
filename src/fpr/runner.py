@@ -278,6 +278,7 @@ def main() -> None:
     ap.add_argument("--modes", default="")
     ap.add_argument("--exp", default="")
     ap.add_argument("--concurrency", type=int, default=0)
+    ap.add_argument("--task-set", default="selected", choices=["selected", "wide"])
     ap.add_argument("--src", default="main", help="restart: faulted experiment to recover")
     a = ap.parse_args()
     cfg = load_cfg()
@@ -301,7 +302,10 @@ def main() -> None:
             print(exp, "done", n_done, "failed", n_fail)
         return
 
-    selected = yaml.safe_load(sel_path.read_text())["selected"] if sel_path.exists() else []
+    sel = yaml.safe_load(sel_path.read_text()) if sel_path.exists() else {}
+    selected = sel.get("selected", [])
+    if a.task_set == "wide":  # robustness set: clean pass rate in [1/3, 0.5)
+        selected = sorted(t for t, v in sel.get("pass_rate", {}).items() if 0.3 <= v < 0.5)
     if a.stage == "screen0":
         runs = expand(a.exp or "screen", list(specs), modes, [0], [], [], [])
     elif a.stage == "screen_all":
@@ -319,8 +323,7 @@ def main() -> None:
     elif a.stage == "main":
         runs = primary_matrix(selected, k=5, modes=modes, exp=a.exp or "main")
     elif a.stage == "main_wide":  # W6.2 robustness set: tasks with clean pass rate in [1/3, 0.5), not pooled with main
-        rate = yaml.safe_load(sel_path.read_text()).get("pass_rate", {})
-        wide = sorted(t for t, v in rate.items() if 0.3 <= v < 0.5)
+        wide = sorted(t for t, v in sel.get("pass_rate", {}).items() if 0.3 <= v < 0.5)
         runs = primary_matrix(wide, k=5, modes=modes, exp=a.exp or "main_wide")
     elif a.stage == "t0":  # W6.3 noise floor at temperature 0: refs + clean continuations, 5 tasks, k=5
         fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
