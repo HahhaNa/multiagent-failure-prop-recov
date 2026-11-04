@@ -1,0 +1,14 @@
+family,point,mode,n,share_fault_caused,ci_lo,ci_hi,share_irreversible,share_compensable,steps_to_first_med,tokens_to_first_med,n_effects,tainted,counterfactual_only
+accidental,P.out,message,27,0.0000,0.0000,0.0000,0.0000,0.0000,,,0,0,0
+accidental,P.out,state,27,0.1111,0.0000,0.3333,0.0000,0.1111,4.0000,4145.0000,3,3,0
+accidental,R.out,message,69,0.0580,0.0000,0.1515,0.0580,0.0000,7.0000,3168.0000,4,4,0
+accidental,R.out,state,69,0.1594,0.0000,0.3495,0.0725,0.0870,10.0000,8162.0000,11,11,0
+accidental,R.start,message,42,0.2857,0.0714,0.5000,0.2143,0.0714,7.0000,6407.0000,12,0,12
+accidental,R.start,state,42,0.1905,0.0000,0.4048,0.1905,0.0000,10.0000,14797.0000,8,0,8
+adversarial,E.tool,message,42,0.5714,0.3571,0.8095,0.5000,0.0714,3.0000,3036.0000,24,20,4
+adversarial,E.tool,state,36,1.0000,1.0000,1.0000,0.8333,0.1667,3.0000,4619.0000,39,39,0
+adversarial,R.out,message,42,0.7857,0.5714,1.0000,0.5714,0.2143,7.0000,6071.0000,34,31,3
+adversarial,R.out,state,42,0.9286,0.8095,1.0000,0.7143,0.2143,15.0000,16698.0000,42,30,12
+adversarial,S.write,state,42,0.4048,0.1661,0.6429,0.3333,0.0714,4.0000,8881.0000,17,17,0
+control,R.out,message,30,0.1000,0.0000,0.3000,0.1000,0.0000,6.0000,3163.0000,3,3,0
+control,R.out,state,30,0.1000,0.0000,0.3000,0.1000,0.0000,11.0000,7335.0000,3,3,0

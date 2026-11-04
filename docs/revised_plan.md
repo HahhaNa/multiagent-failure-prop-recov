@@ -62,8 +62,21 @@ Observed differences (k=10 uses `main` + `cf10`, branch seeds 100–109): +0.006
 more than 0.01.
 
 **Prefix variance (V3).** Every main branch replays the reference prefix of seed 0: one prefix per task × mode, so
-between-prefix variance is not captured in any Phase 1 CI. `prefix_s1` / `prefix_s2` (core conditions, prefixes of
-reference seeds 1 and 2) are PENDING.
+between-prefix variance is not captured in any Phase 1 CI. `prefix_s1` / `prefix_s2` (core conditions, branch seeds
+100–102, prefixes of reference seeds 1 and 2; 994 runs each) — `analysis/phase1_prefix.py`,
+`data/tables/validation_main/v3_prefix_variance.csv`:
+
+| Family, mode | Δ seed-0 [95% CI] (n) | Δ seeds 1–2 pooled (n) | P(prop \| used) seed-0 | seeds 1–2 |
+|---|---|---|---|---|
+| accidental, message | 0.42 [0.21, 0.62] (147) | 0.31 (273) | 0.54 [0.32, 0.72] | 0.49 |
+| accidental, state | 0.45 [0.20, 0.68] (144) | 0.48 (276) | 0.68 [0.48, 0.85] | 0.67 |
+| adversarial, message | 0.64 [0.49, 0.79] (84) | 0.54 (168) | 0.87 [0.73, 0.98] | 0.87 |
+| adversarial, state | 0.44 [0.25, 0.61] (126) | 0.48 (246) | 0.85 [0.72, 0.96] | 0.93 |
+
+All 8 pooled estimates lie inside the seed-0 CI, so the pre-registered criterion for prefix independence is met.
+The test has low power (core conditions only, 3 branch seeds; seed-0 CIs span 0.25–0.48), and two point estimates
+move by 0.10 or more (accidental message Δ −0.11, adversarial message Δ −0.10). Phase 1 CIs are kept as computed
+over tasks; prefix is listed as an unmodeled variance source.
 
 ---
 

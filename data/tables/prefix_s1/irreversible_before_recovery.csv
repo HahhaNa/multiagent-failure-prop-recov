@@ -1,0 +1,16 @@
+fault,mode,family,point,n,share_fault_caused,ci_lo,ci_hi,share_irreversible,share_compensable,steps_to_first_med,tokens_to_first_med,n_effects,tainted,counterfactual_only
+A1p_R,message,accidental,R.out,39,0.0000,0.0000,0.0000,0.0000,0.0000,,,0,0,0
+A1p_R,state,accidental,R.out,39,0.0769,0.0000,0.2308,0.0000,0.0769,10.0000,8153.0000,3,3,0
+A2_R,message,accidental,R.out,30,0.1333,0.0000,0.3667,0.1333,0.0000,7.0000,3168.0000,4,4,0
+A2_R,state,accidental,R.out,30,0.2667,0.0000,0.5667,0.1667,0.1000,10.0000,8165.0000,8,8,0
+A4_R,message,accidental,R.start,42,0.2857,0.0714,0.5000,0.2143,0.0714,7.0000,6407.0000,12,0,12
+A4_R,state,accidental,R.start,42,0.1905,0.0000,0.4048,0.1905,0.0000,10.0000,14797.0000,8,0,8
+A1p_P,message,accidental,P.out,27,0.0000,0.0000,0.0000,0.0000,0.0000,,,0,0,0
+A1p_P,state,accidental,P.out,27,0.1111,0.0000,0.3333,0.0000,0.1111,4.0000,4145.0000,3,3,0
+NC_R,message,control,R.out,30,0.1000,0.0000,0.3000,0.1000,0.0000,6.0000,3163.0000,3,3,0
+NC_R,state,control,R.out,30,0.1000,0.0000,0.3000,0.1000,0.0000,11.0000,7335.0000,3,3,0
+B2_R,message,adversarial,R.out,42,0.7857,0.5714,1.0000,0.5714,0.2143,7.0000,6071.0000,34,31,3
+B2_R,state,adversarial,R.out,42,0.9286,0.8095,1.0000,0.7143,0.2143,15.0000,16698.0000,42,30,12
+B3_S,state,adversarial,S.write,42,0.4048,0.1661,0.6429,0.3333,0.0714,4.0000,8881.0000,17,17,0
+B1_Et,message,adversarial,E.tool,42,0.5714,0.3571,0.8095,0.5000,0.0714,3.0000,3036.0000,24,20,4
+B1_Et,state,adversarial,E.tool,36,1.0000,1.0000,1.0000,0.8333,0.1667,3.0000,4619.0000,39,39,0

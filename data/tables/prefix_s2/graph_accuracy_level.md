@@ -1,0 +1,26 @@
+| family      | level   | graph          |   n_artifacts |   dependent_share |   precision |   recall |   f1 |   tp |   fp |   fn |   f1_lo |   f1_hi |
+|:------------|:--------|:---------------|--------------:|------------------:|------------:|---------:|-----:|-----:|-----:|-----:|--------:|--------:|
+| accidental  | call    | declared       |           472 |              0.69 |        0.78 |     0.76 | 0.77 |  249 |   69 |   77 |    0.60 |    0.87 |
+| accidental  | call    | dataflow       |           472 |              0.69 |        0.69 |     1.00 | 0.82 |  326 |  146 |    0 |    0.69 |    0.90 |
+| accidental  | call    | taint          |           472 |              0.69 |        0.94 |     0.62 | 0.75 |  203 |   14 |  123 |    0.50 |    0.88 |
+| accidental  | call    | declared_taint |           472 |              0.69 |        0.77 |     0.77 | 0.77 |  251 |   74 |   75 |    0.59 |    0.87 |
+| accidental  | step    | declared       |           181 |              0.83 |        0.93 |     0.91 | 0.92 |  137 |   11 |   13 |    0.80 |    1.00 |
+| accidental  | step    | dataflow       |           181 |              0.83 |        0.83 |     1.00 | 0.91 |  150 |   31 |    0 |    0.79 |    1.00 |
+| accidental  | step    | taint          |           181 |              0.83 |        0.96 |     0.87 | 0.91 |  130 |    6 |   20 |    0.80 |    1.00 |
+| accidental  | step    | declared_taint |           181 |              0.83 |        0.93 |     0.91 | 0.92 |  137 |   11 |   13 |    0.80 |    1.00 |
+| adversarial | call    | declared       |           446 |              0.56 |        1.00 |     0.28 | 0.44 |   69 |    0 |  179 |    0.35 |    0.52 |
+| adversarial | call    | dataflow       |           446 |              0.56 |        0.56 |     1.00 | 0.71 |  248 |  198 |    0 |    0.62 |    0.81 |
+| adversarial | call    | taint          |           446 |              0.56 |        1.00 |     0.56 | 0.72 |  138 |    0 |  110 |    0.62 |    0.79 |
+| adversarial | call    | declared_taint |           446 |              0.56 |        1.00 |     0.60 | 0.75 |  148 |    0 |  100 |    0.66 |    0.82 |
+| adversarial | step    | declared       |           173 |              0.55 |        1.00 |     0.66 | 0.80 |   63 |    0 |   32 |    0.69 |    0.90 |
+| adversarial | step    | dataflow       |           173 |              0.55 |        0.55 |     1.00 | 0.71 |   95 |   78 |    0 |    0.60 |    0.82 |
+| adversarial | step    | taint          |           173 |              0.55 |        1.00 |     0.66 | 0.80 |   63 |    0 |   32 |    0.69 |    0.89 |
+| adversarial | step    | declared_taint |           173 |              0.55 |        1.00 |     0.69 | 0.82 |   66 |    0 |   29 |    0.73 |    0.91 |
+| control     | call    | declared       |            80 |              0.30 |        0.42 |     0.62 | 0.50 |   15 |   21 |    9 |    0.06 |    0.80 |
+| control     | call    | dataflow       |            80 |              0.30 |        0.30 |     1.00 | 0.46 |   24 |   56 |    0 |    0.15 |    0.68 |
+| control     | call    | taint          |            80 |              0.30 |        1.00 |     0.46 | 0.63 |   11 |    0 |   13 |    0.20 |    1.00 |
+| control     | call    | declared_taint |            80 |              0.30 |        0.42 |     0.62 | 0.50 |   15 |   21 |    9 |    0.06 |    0.80 |
+| control     | step    | declared       |            53 |              0.38 |        0.59 |     0.80 | 0.68 |   16 |   11 |    4 |    0.40 |    0.90 |
+| control     | step    | dataflow       |            53 |              0.38 |        0.38 |     1.00 | 0.55 |   20 |   33 |    0 |    0.21 |    0.79 |
+| control     | step    | taint          |            53 |              0.38 |        1.00 |     0.80 | 0.89 |   16 |    0 |    4 |    0.57 |    1.00 |
+| control     | step    | declared_taint |            53 |              0.38 |        0.59 |     0.80 | 0.68 |   16 |   11 |    4 |    0.40 |    0.90 |

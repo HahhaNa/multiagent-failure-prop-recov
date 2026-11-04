@@ -76,8 +76,9 @@ effect before any recovery, by injection stage. (b, c) Utility and residual harm
 - **Task selection.** The 14 tasks are the candidates with clean pass rate ≥ 0.5 for this model (33 candidates; 4 at
   1/3 run separately; 15 below). On the 4 excluded tasks clean failure is 0.43–0.54 and adversarial Δ is 0.22
   [−0.06, 0.54], so Δ on selected tasks is an upper-end estimate.
-- **One prefix per task and mode.** All branches replay the reference prefix of seed 0; runs with two more prefixes
-  are pending. Per-condition results (18 conditions) are exploratory.
+- **One prefix per task and mode.** Branches replay the reference prefix of seed 0. On two more prefixes (core
+  conditions, 1,988 runs) all family-level Δ and propagation estimates fall inside the seed-0 CIs, a low-power check.
+  Per-condition results (18 conditions) are exploratory.
 - **Models.** Qwen3-8B is the primary model. On Qwen3-4B (`data/tables/main_qwen3-4b/`), findings 2 and 5 have the
   same direction; finding 1 holds in message mode (0.78 vs 0.51) but not in state mode (0.82 [0.77, 0.86] vs 0.71
   [0.57, 0.84]). Qwen3-14B runs; three 8B models from other families did not pass the clean-success gate in this harness (two of them because

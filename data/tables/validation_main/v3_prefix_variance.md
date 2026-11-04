@@ -1,0 +1,10 @@
+| family      | mode    | metric          |   n_seed0 |   seed0 |   seed0_lo |   seed0_hi |   n_other |   other_pooled |   other_lo |   other_hi |   prefix_s1 |   prefix_s2 | inside_seed0_ci   |
+|:------------|:--------|:----------------|----------:|--------:|-----------:|-----------:|----------:|---------------:|-----------:|-----------:|------------:|------------:|:------------------|
+| accidental  | message | delta           |       147 |   0.419 |      0.213 |      0.616 |       273 |          0.308 |      0.079 |      0.519 |       0.312 |       0.304 | True              |
+| accidental  | message | prop_given_used |       147 |   0.540 |      0.318 |      0.723 |       273 |          0.490 |      0.259 |      0.669 |       0.479 |       0.500 | True              |
+| accidental  | state   | delta           |       144 |   0.451 |      0.201 |      0.682 |       276 |          0.475 |      0.282 |      0.679 |       0.507 |       0.442 | True              |
+| accidental  | state   | prop_given_used |       144 |   0.682 |      0.475 |      0.854 |       276 |          0.665 |      0.483 |      0.828 |       0.655 |       0.675 | True              |
+| adversarial | message | delta           |        84 |   0.640 |      0.486 |      0.786 |       168 |          0.536 |      0.369 |      0.696 |       0.512 |       0.560 | True              |
+| adversarial | message | prop_given_used |        84 |   0.871 |      0.732 |      0.983 |       168 |          0.867 |      0.762 |      0.951 |       0.905 |       0.833 | True              |
+| adversarial | state   | delta           |       126 |   0.444 |      0.254 |      0.611 |       246 |          0.484 |      0.362 |      0.609 |       0.550 |       0.421 | True              |
+| adversarial | state   | prop_given_used |       126 |   0.851 |      0.723 |      0.956 |       246 |          0.933 |      0.870 |      0.980 |       0.946 |       0.918 | True              |
