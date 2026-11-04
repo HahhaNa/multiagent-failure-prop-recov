@@ -9,3 +9,12 @@ llama3.2-3b:
   quantization: fp8-runtime
   tool_parser: llama3_json
   single_tool_calls: true   # chat template rejects several tool calls per turn
+qwen3-4b-cpu:
+  repo: Qwen/Qwen3-4B-GGUF
+  revision: bc640142c66e1fdd12af0bd68f40445458f3869b
+  file: Qwen3-4B-Q4_K_M.gguf
+  quantization: gguf-q4_k_m
+  tool_parser: llama.cpp-jinja
+  backend: llama.cpp b11640 (CPU only)
+  base_url: http://127.0.0.1:8080/v1
+  concurrency: 2

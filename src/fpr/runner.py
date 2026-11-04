@@ -1,7 +1,7 @@
 """Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
 
 Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
-Stages: screen0 screen1 screen_all select pilot primary main main_wide t0 verify_pilot verify restart cross status
+Stages: screen0 screen1 screen_all select pilot primary main main_wide t0 cpu verify_pilot verify restart cross status
 """
 
 import argparse
@@ -71,7 +71,8 @@ def _sh(cmd: str) -> str:
 def base_manifest(cfg: dict, model_alias: str) -> dict:
     models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
     m = models.get(model_alias, {})
-    serve = ROOT / "logs/serve_cmd.txt"
+    serve = ROOT / f"logs/serve_cmd_{model_alias}.txt"
+    serve = serve if serve.exists() else ROOT / "logs/serve_cmd.txt"
     return {
         "git_commit": _sh("git rev-parse HEAD"),
         "git_dirty": bool(_sh("git status --porcelain --untracked-files=no")),
@@ -87,6 +88,7 @@ def base_manifest(cfg: dict, model_alias: str) -> dict:
         "cuda_version": _sh("nvidia-smi | grep -o 'CUDA Version: [0-9.]*' | cut -d' ' -f3"),
         "serve_command": serve.read_text().strip() if serve.exists() else None,
         "temperature": cfg["temperature"],
+        "backend": m.get("backend", "vllm"),
     }
 
 
@@ -256,7 +258,9 @@ def make_llm(args, cfg, specs):
 
         return CachedLLM(MockLLM(specs), cache, "record"), "mock"
     models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
-    return CachedLLM(OpenAIClient(concurrency=cfg["concurrency"]), cache, "record"), models[args.model]["repo"]
+    m = models[args.model]
+    client = OpenAIClient(base_url=m.get("base_url", "http://127.0.0.1:8000/v1"), concurrency=m.get("concurrency", cfg["concurrency"]))
+    return CachedLLM(client, cache, "record"), m["repo"]
 
 
 def main() -> None:
@@ -317,6 +321,8 @@ def main() -> None:
         fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
         cfg = {**cfg, "temperature": 0.0}
         runs = expand(a.exp or "t0", selected[:: max(1, len(selected) // 5)][:5], modes, cfg["ref_seeds"][:5], [], fc["clean_points"], cfg["branch_seeds"][:5])
+    elif a.stage == "cpu":  # W6.4 CPU latency sample: 10 tasks x 2 modes, clean, seed 0
+        runs = expand(a.exp or f"cpu_{a.model}", selected[:10], modes, [0], [], [], [])
     elif a.stage == "verify_pilot":  # PLAN2 4: mini pilot, 5 tasks, k=1, clean refs only
         runs = expand(a.exp or "verify_pilot", selected[:: max(1, len(selected) // 5)][:5], modes, [0], [], [], [])
     elif a.stage == "verify":
@@ -334,7 +340,8 @@ def main() -> None:
     if a.limit:
         runs = runs[: a.limit]
     llm, model_name = make_llm(a, cfg, specs)
-    r = Runner(llm, cfg, specs, "mock" if a.mock else a.model, model_name, cfg["concurrency"], root, verify=a.stage.startswith("verify"))
+    conc = yaml.safe_load((ROOT / "configs/models.yaml").read_text()).get(a.model, {}).get("concurrency", cfg["concurrency"])
+    r = Runner(llm, cfg, specs, "mock" if a.mock else a.model, model_name, conc, root, verify=a.stage.startswith("verify"))
     (root / "logs").mkdir(parents=True, exist_ok=True)
     print(f"{a.stage}: {len(runs)} runs, {sum(1 for x in runs if r.is_done(x))} already done", flush=True)
     log_name = a.exp or ("screen" if a.stage.startswith("screen") else a.stage)
