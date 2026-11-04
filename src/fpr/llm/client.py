@@ -61,9 +61,11 @@ def alnum9_ids(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 class OpenAIClient:
-    def __init__(self, base_url: str = "http://127.0.0.1:8000/v1", concurrency: int = 64, timeout_s: float = 900, alnum9: bool = False):
+    def __init__(self, base_url: str = "http://127.0.0.1:8000/v1", concurrency: int = 64, timeout_s: float = 900, alnum9: bool = False,
+                 thinking_flag: bool = True):
         self.base_url = base_url.rstrip("/")
         self.alnum9 = alnum9
+        self.thinking_flag = thinking_flag  # send the Qwen3 enable_thinking=False template kwarg
         self.sem = asyncio.Semaphore(concurrency)
         self.http = httpx.AsyncClient(timeout=timeout_s, limits=httpx.Limits(max_connections=concurrency + 8))
 
@@ -74,7 +76,7 @@ class OpenAIClient:
             "temperature": req.temperature,
             "seed": req.seed,
             "max_tokens": req.max_tokens,
-            **NO_THINK,
+            **(NO_THINK if self.thinking_flag else {}),
         }
         if req.tools:
             body["tools"] = req.tools

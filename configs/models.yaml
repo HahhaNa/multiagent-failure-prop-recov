@@ -19,17 +19,20 @@ qwen3-4b-cpu:
   base_url: http://127.0.0.1:8080/v1
   concurrency: 2
 llama3.1-8b:
+  thinking_flag: false   # Qwen3-only template kwarg not sent
   repo: unsloth/Llama-3.1-8B-Instruct   # ungated mirror of meta-llama/Llama-3.1-8B-Instruct
   revision: 4699cc75b550f9c6f3173fb80f4703b62d946aa5
   quantization: fp8-runtime
   tool_parser: llama3_json
   single_tool_calls: true
 granite3.3-8b:
+  thinking_flag: false   # Qwen3-only template kwarg not sent
   repo: ibm-granite/granite-3.3-8b-instruct
   revision: 51dd4bc2ade4059a6bd87649d68aa11e4fb2529b
   quantization: fp8-runtime
   tool_parser: granite
 ministral-8b:
+  thinking_flag: false   # Qwen3-only template kwarg not sent
   repo: mistralai/Ministral-8B-Instruct-2410
   revision: 2f494a194c5b980dfb9772cb92d26cbb671fce5a
   quantization: fp8-runtime
@@ -46,11 +49,13 @@ qwen3-14b:
   quantization: awq-checkpoint
   tool_parser: hermes
 hermes3-8b:
+  thinking_flag: false   # Qwen3-only template kwarg not sent
   repo: NousResearch/Hermes-3-Llama-3.1-8B
   revision: 896ea440e5a9e6070e3d8a2774daf2b481ab425b
   quantization: fp8-runtime
   tool_parser: hermes
 ministral-8b-mt:
+  thinking_flag: false   # Qwen3-only template kwarg not sent
   repo: mistralai/Ministral-8B-Instruct-2410
   revision: 2f494a194c5b980dfb9772cb92d26cbb671fce5a
   quantization: fp8-runtime

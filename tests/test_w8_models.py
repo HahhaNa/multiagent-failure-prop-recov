@@ -52,3 +52,25 @@ def test_prefix_matrix_replays_other_seed_prefix(specs, mock, tmp_path):
                 pre = [e for e in ev(d) if e["kind"] == "llm_call" and not e["branched"]]
                 assert all(e["replayed"] for e in pre), d
                 assert [e["key"] for e in pre] == [e["key"] for e in ref[: len(pre)]], d
+
+
+def test_thinking_kwarg_only_when_flagged():
+    import asyncio
+    import json
+
+    import httpx
+
+    from fpr.llm.client import ChatRequest, OpenAIClient
+
+    seen = []
+
+    def handler(request):
+        seen.append(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "usage": {}})
+
+    for flag in (True, False):
+        c = OpenAIClient(thinking_flag=flag)
+        c.http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        asyncio.run(c.chat(ChatRequest(model="m", messages=[{"role": "user", "content": "x"}]), {}))
+    assert "chat_template_kwargs" in seen[0]
+    assert "chat_template_kwargs" not in seen[1]

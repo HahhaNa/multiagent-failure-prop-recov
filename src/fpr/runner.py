@@ -264,15 +264,18 @@ def select_tasks(root: Path, specs: dict[str, TaskSpec], n: int = 20, exp: str =
 
 
 def make_llm(args, cfg, specs):
-    cache = DiskCache(runs_root(cfg) / "cache" / ("mock" if args.mock else args.model))
+    models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
+    m = models.get(args.model, {})
+    # models without the Qwen3 thinking kwarg get their own cache: the cache key does not include that kwarg
+    name = args.model if m.get("thinking_flag", True) else f"{args.model}-nothinkflag"
+    cache = DiskCache(runs_root(cfg) / "cache" / ("mock" if args.mock else name))
     if args.mock:
         from .llm.mock import MockLLM
 
         return CachedLLM(MockLLM(specs), cache, "record"), "mock"
-    models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
-    m = models[args.model]
     client = OpenAIClient(
-        base_url=m.get("base_url", "http://127.0.0.1:8000/v1"), concurrency=m.get("concurrency", cfg["concurrency"]), alnum9=m.get("tool_call_ids") == "alnum9"
+        base_url=m.get("base_url", "http://127.0.0.1:8000/v1"), concurrency=m.get("concurrency", cfg["concurrency"]),
+        alnum9=m.get("tool_call_ids") == "alnum9", thinking_flag=m.get("thinking_flag", True),
     )
     return CachedLLM(client, cache, "record"), m["repo"]
 

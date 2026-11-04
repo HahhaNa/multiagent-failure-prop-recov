@@ -148,3 +148,12 @@ Motivated by audit round 3 (branch 11: a correct payment whose free-text subject
 as a fault-caused irreversible effect under E1). The share of branches with a fault-caused irreversible or
 compensable effect is recomputed under E1, E2 and E3 (definitions in V1), per family and injection point. This
 analysis was not planned before the audit and is reported as exploratory; E1 remains the primary definition.
+
+## Amendment 4 (2026-11-04, before running)
+
+The harness sent the Qwen3-only template kwarg `chat_template_kwargs={"enable_thinking": false}` to every model.
+vLLM's Mistral tokenizer rejects it (`ministral-8b-mt`: HTTP 400 on every call); other templates ignore it, but this is
+not verified. Non-Qwen models now get no such kwarg (`thinking_flag: false` in `configs/models.yaml`) and a separate
+LLM cache, and the gate is re-run for all four non-Qwen 8B candidates (llama3.1-8b, granite3.3-8b, hermes3-8b,
+ministral-8b-mt) as experiments `*-v4`. Gate unchanged: refs clean success >= 0.4; any model that passes runs the full
+matrix and is tested on H1–H3. Earlier gate runs are kept and reported.
