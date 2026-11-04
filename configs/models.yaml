@@ -50,3 +50,10 @@ hermes3-8b:
   revision: 896ea440e5a9e6070e3d8a2774daf2b481ab425b
   quantization: fp8-runtime
   tool_parser: hermes
+ministral-8b-mt:
+  repo: mistralai/Ministral-8B-Instruct-2410
+  revision: 2f494a194c5b980dfb9772cb92d26cbb671fce5a
+  quantization: fp8-runtime
+  tool_parser: mistral
+  tool_call_ids: alnum9
+  serve_args: --tokenizer-mode mistral   # mistral_common prompt formatting; the HF template rejects tool turns

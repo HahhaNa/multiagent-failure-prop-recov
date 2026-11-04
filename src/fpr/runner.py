@@ -115,6 +115,14 @@ def primary_matrix(tasks: list[str], k: int = 3, core_only: bool = False, modes:
     return expand(exp, tasks, modes or cfg["modes"], cfg["ref_seeds"][:k], conds, fc["clean_points"], cfg["branch_seeds"][:k])
 
 
+def prefix_matrix(tasks: list[str], seed: int, modes: list[str], exp: str, k: int = 3) -> list[RunSpec]:
+    """Core conditions and clean continuations that replay the reference prefix of `seed` instead of seed 0."""
+    cfg = load_cfg()
+    fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
+    runs = expand(exp, tasks, modes, [seed], [c for c in conditions() if c.core], fc["clean_points"], cfg["branch_seeds"][:k])
+    return [RunSpec(x.exp, x.task, x.mode, x.fault, seed, x.branch_seed) if x.fault else x for x in runs]
+
+
 RECOVERY_SEED0 = 200
 
 
@@ -282,6 +290,7 @@ def main() -> None:
     ap.add_argument("--concurrency", type=int, default=0)
     ap.add_argument("--task-set", default="selected", choices=["selected", "wide"])
     ap.add_argument("--src", default="main", help="restart: faulted experiment to recover")
+    ap.add_argument("--prefix-seed", type=int, default=1, help="prefix: reference seed whose prefix the branches replay")
     a = ap.parse_args()
     cfg = load_cfg()
     root = runs_root(cfg)
@@ -345,6 +354,11 @@ def main() -> None:
     elif a.stage == "restart":
         core = [c.id for c in conditions() if c.core] if a.core_only else None
         runs = restart_matrix(root, a.src, a.exp or "restart", core)
+    elif a.stage == "cf10":  # V2: five more clean continuations per point on the main prefix (seed 0)
+        fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
+        runs = expand(a.exp or "cf10", selected, modes, [], [], fc["clean_points"], [105, 106, 107, 108, 109])
+    elif a.stage == "prefix":  # V3: core conditions + clean continuations on the reference prefix of seed --prefix-seed
+        runs = prefix_matrix(selected, a.prefix_seed, modes, a.exp or f"prefix_s{a.prefix_seed}")
     elif a.stage == "refs":  # clean go/no-go sample for a new model: selected tasks x modes, ref seeds 0-1
         runs = expand(a.exp or f"refs_{a.model}", selected, modes, cfg["ref_seeds"][: a.k or 2], [], [], [])
     elif a.stage == "cross":
