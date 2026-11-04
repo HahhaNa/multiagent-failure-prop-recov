@@ -196,7 +196,7 @@ every model.
 | Llama-3.1-8B (FP8 at load) | Llama | 0.29, 0.50 | no-go: executor exhausts its turns after calls to tools outside its role |
 | Granite-3.3-8B (FP8 at load) | IBM | 0.07, 0.00 | no-go |
 | Ministral-8B (FP8 at load) | Mistral | 0.07, 1.00 (two runs) | invalid: chat template rejects the harness's tool-call ids, then non-alternating roles; rerun with mistral tokenizer mode PENDING |
-| Hermes-3-Llama-3.1-8B | Llama fine-tune | PENDING | backup |
+| Hermes-3-Llama-3.1-8B (FP8 at load) | Llama fine-tune | 0.39 (22/56), 0.00 | no-go: below the 0.4 gate by one run; not run further (gate fixed in advance) |
 
 **Pre-registered hypotheses X1 per model** (`data/tables/models/summary.md`; `analysis/phase1_models.py`; runs
 `main_<model>`, `restart_<model>`, `verify_<model>`):
