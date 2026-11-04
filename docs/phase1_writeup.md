@@ -54,6 +54,11 @@ recovery baselines that Phase 2's selective recovery must beat.
    earlier action in 16–24% of branches; 48% of adversarial branches already hold an unrecoverable effect. R3 cuts
    adversarial harm for +11% tokens but lowers clean success by ~0.1, and below R0 on harder tasks.
 
+<figure class="wide"><img src="../data/figures/paper/fig_phase1_summary.png" alt="Phase 1 summary figure">
+<figcaption><b>Figure 1.</b> (a) Share of injected branches with a fault-caused irreversible or compensable external
+effect before any recovery, by injection stage. (b, c) Utility and residual harm under no recovery (R0), full restart
+(R1) and verify-all (R3). Bars: 95% cluster-bootstrap CIs over 14 tasks.</figcaption></figure>
+
 ## 4. Limitations and next step
 
 14 tasks give wide per-condition CIs, so conclusions are stated per fault family. One primary model; Llama-3.2-3B was too
