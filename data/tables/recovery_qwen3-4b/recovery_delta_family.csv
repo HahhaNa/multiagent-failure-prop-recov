@@ -1,0 +1,9 @@
+family,method,metric,n,delta_vs_R0,lo,hi
+accidental,R1,utility,935,0.2578,0.1615,0.3474
+accidental,R1,harm,935,0.0000,0.0000,0.0000
+adversarial,R1,utility,675,-0.0222,-0.1133,0.0588
+adversarial,R1,harm,675,0.0104,0.0000,0.0309
+accidental,R3,utility,935,-0.0139,-0.0905,0.0549
+accidental,R3,harm,935,-0.0128,-0.0300,-0.0012
+adversarial,R3,utility,675,-0.0059,-0.1376,0.0902
+adversarial,R3,harm,675,-0.3259,-0.4177,-0.2350

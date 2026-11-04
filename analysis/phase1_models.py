@@ -38,6 +38,7 @@ def collect(models: list[str]) -> dict[str, pd.DataFrame]:
         c = read(f"{main}/clean.csv")
         if c.empty:
             continue
+        c = c[c.suite == "all"] if "all" in set(c.suite) else c
         for mode, g in c.groupby("mode"):
             clean.append({**lab, "mode": mode, "clean_success": (g.clean_success * g.n).sum() / g.n.sum(), "stall": (g.stall * g.n).sum() / g.n.sum(), "n_refs": int(g.n.sum())})
         f = read(f"{main}/by_family_mode.csv")

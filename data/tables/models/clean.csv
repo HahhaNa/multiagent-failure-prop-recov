@@ -1,0 +1,5 @@
+model,mode,clean_success,stall,n_refs
+Qwen3-8B,message,0.8571,0.0000,70
+Qwen3-8B,state,0.7857,0.0000,70
+Qwen3-4B,message,0.6000,0.1000,70
+Qwen3-4B,state,0.4571,0.1143,70

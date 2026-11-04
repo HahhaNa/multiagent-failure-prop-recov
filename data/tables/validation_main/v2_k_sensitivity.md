@@ -1,0 +1,26 @@
+| family      |   k | metric                |   mean |   min |   max |   n_subsets |
+|:------------|----:|:----------------------|-------:|------:|------:|------------:|
+| accidental  |   1 | dependent_share       |  0.710 | 0.700 | 0.718 |           5 |
+| accidental  |   1 | recall_taint          |  0.581 | 0.574 | 0.591 |           5 |
+| accidental  |   1 | recall_declared_taint |  0.699 | 0.692 | 0.708 |           5 |
+| accidental  |   1 | recall_declared       |  0.626 | 0.621 | 0.634 |           5 |
+| adversarial |   1 | dependent_share       |  0.585 | 0.577 | 0.599 |           5 |
+| adversarial |   1 | recall_taint          |  0.493 | 0.482 | 0.501 |           5 |
+| adversarial |   1 | recall_declared_taint |  0.679 | 0.670 | 0.687 |           5 |
+| adversarial |   1 | recall_declared       |  0.549 | 0.541 | 0.557 |           5 |
+| accidental  |   3 | dependent_share       |  0.673 | 0.664 | 0.684 |          10 |
+| accidental  |   3 | recall_taint          |  0.609 | 0.601 | 0.615 |          10 |
+| accidental  |   3 | recall_declared_taint |  0.718 | 0.708 | 0.723 |          10 |
+| accidental  |   3 | recall_declared       |  0.643 | 0.635 | 0.648 |          10 |
+| adversarial |   3 | dependent_share       |  0.538 | 0.526 | 0.549 |          10 |
+| adversarial |   3 | recall_taint          |  0.534 | 0.522 | 0.544 |          10 |
+| adversarial |   3 | recall_declared_taint |  0.710 | 0.697 | 0.721 |          10 |
+| adversarial |   3 | recall_declared       |  0.570 | 0.557 | 0.582 |          10 |
+| accidental  |   5 | dependent_share       |  0.658 | 0.658 | 0.658 |           1 |
+| accidental  |   5 | recall_taint          |  0.620 | 0.620 | 0.620 |           1 |
+| accidental  |   5 | recall_declared_taint |  0.725 | 0.725 | 0.725 |           1 |
+| accidental  |   5 | recall_declared       |  0.650 | 0.650 | 0.650 |           1 |
+| adversarial |   5 | dependent_share       |  0.519 | 0.519 | 0.519 |           1 |
+| adversarial |   5 | recall_taint          |  0.551 | 0.551 | 0.551 |           1 |
+| adversarial |   5 | recall_declared_taint |  0.718 | 0.718 | 0.718 |           1 |
+| adversarial |   5 | recall_declared       |  0.575 | 0.575 | 0.575 |           1 |

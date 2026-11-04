@@ -1,0 +1,26 @@
+| family      | definition   | graph          |   n_artifacts |   dependent_share |   recall |   recall_lo |   recall_hi |   precision |
+|:------------|:-------------|:---------------|--------------:|------------------:|---------:|------------:|------------:|------------:|
+| accidental  | E1           | declared       |          3389 |             0.658 |    0.650 |       0.532 |       0.725 |       0.778 |
+| accidental  | E1           | dataflow       |          3389 |             0.658 |    1.000 |       1.000 |       1.000 |       0.658 |
+| accidental  | E1           | taint          |          3389 |             0.658 |    0.620 |       0.525 |       0.698 |       0.979 |
+| accidental  | E1           | declared_taint |          3389 |             0.658 |    0.725 |       0.644 |       0.780 |       0.789 |
+| accidental  | E2           | declared       |          3389 |             0.628 |    0.667 |       0.556 |       0.739 |       0.763 |
+| accidental  | E2           | dataflow       |          3389 |             0.628 |    1.000 |       1.000 |       1.000 |       0.628 |
+| accidental  | E2           | taint          |          3389 |             0.628 |    0.639 |       0.544 |       0.716 |       0.965 |
+| accidental  | E2           | declared_taint |          3389 |             0.628 |    0.744 |       0.671 |       0.792 |       0.773 |
+| accidental  | E3           | declared       |          3389 |             0.639 |    0.663 |       0.551 |       0.734 |       0.771 |
+| accidental  | E3           | dataflow       |          3389 |             0.639 |    1.000 |       1.000 |       1.000 |       0.639 |
+| accidental  | E3           | taint          |          3389 |             0.639 |    0.635 |       0.541 |       0.711 |       0.974 |
+| accidental  | E3           | declared_taint |          3389 |             0.639 |    0.738 |       0.668 |       0.788 |       0.781 |
+| adversarial | E1           | declared       |          2976 |             0.519 |    0.575 |       0.466 |       0.673 |       0.750 |
+| adversarial | E1           | dataflow       |          2976 |             0.519 |    1.000 |       1.000 |       1.000 |       0.519 |
+| adversarial | E1           | taint          |          2976 |             0.519 |    0.551 |       0.473 |       0.636 |       0.991 |
+| adversarial | E1           | declared_taint |          2976 |             0.519 |    0.718 |       0.622 |       0.804 |       0.784 |
+| adversarial | E2           | declared       |          2976 |             0.494 |    0.580 |       0.477 |       0.672 |       0.718 |
+| adversarial | E2           | dataflow       |          2976 |             0.494 |    1.000 |       1.000 |       1.000 |       0.494 |
+| adversarial | E2           | taint          |          2976 |             0.494 |    0.568 |       0.494 |       0.656 |       0.971 |
+| adversarial | E2           | declared_taint |          2976 |             0.494 |    0.725 |       0.638 |       0.805 |       0.753 |
+| adversarial | E3           | declared       |          2976 |             0.505 |    0.583 |       0.480 |       0.675 |       0.739 |
+| adversarial | E3           | dataflow       |          2976 |             0.505 |    1.000 |       1.000 |       1.000 |       0.505 |
+| adversarial | E3           | taint          |          2976 |             0.505 |    0.565 |       0.496 |       0.646 |       0.988 |
+| adversarial | E3           | declared_taint |          2976 |             0.505 |    0.729 |       0.644 |       0.807 |       0.775 |

@@ -1,0 +1,5 @@
+exp,mode,n,clean_success,lo,hi,tokens,verifier_tokens,llm_calls
+main_qwen3-4b,message,70,0.6000,0.3714,0.8286,26401.2000,0.0000,11.2857
+main_qwen3-4b,state,70,0.4571,0.2571,0.6571,30354.1429,0.0000,14.6000
+verify_qwen3-4b,message,70,0.6000,0.3714,0.8143,31655.7429,3808.3286,17.4714
+verify_qwen3-4b,state,70,0.4429,0.2286,0.6571,34325.5143,3513.0857,19.7143

@@ -1,0 +1,9 @@
+family,method,metric,n,delta_vs_R0,lo,hi,model
+accidental,R1,utility,1160,0.2664,0.1315,0.3971,Qwen3-8B
+accidental,R1,harm,1160,0.0000,0.0000,0.0000,Qwen3-8B
+adversarial,R1,utility,740,0.0054,-0.1716,0.1832,Qwen3-8B
+adversarial,R1,harm,740,0.0162,0.0000,0.0442,Qwen3-8B
+accidental,R3,utility,1140,0.0439,-0.0916,0.1517,Qwen3-8B
+accidental,R3,harm,1140,-0.0263,-0.0559,0.0000,Qwen3-8B
+adversarial,R3,utility,735,0.1429,-0.0206,0.3000,Qwen3-8B
+adversarial,R3,harm,735,-0.3905,-0.4490,-0.3387,Qwen3-8B
