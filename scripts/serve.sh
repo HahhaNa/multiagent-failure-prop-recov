@@ -12,10 +12,10 @@ GPU_UTIL="${GPU_UTIL:-0.90}"
 MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
 
 export PATH="$HOME/.local/bin:$PATH"
-read -r REPO REVISION TOOL_PARSER QUANT < <(uv run --frozen python - "$ALIAS" <<'EOF'
+read -r REPO REVISION TOOL_PARSER QUANT EXTRA < <(uv run --frozen python - "$ALIAS" <<'EOF'
 import sys, yaml
 m = yaml.safe_load(open("configs/models.yaml"))[sys.argv[1]]
-print(m["repo"], m["revision"], m["tool_parser"], m.get("quantization", "none"))
+print(m["repo"], m["revision"], m["tool_parser"], m.get("quantization", "none"), m.get("serve_args", ""))
 EOF
 )
 
@@ -32,6 +32,8 @@ CMD=(uv run --frozen vllm serve "$REPO" --revision "$REVISION"
   --enable-auto-tool-choice --tool-call-parser "$TOOL_PARSER"
   --seed 0 --host 127.0.0.1 --port "$PORT")
 [[ "$QUANT" == "fp8-runtime" ]] && CMD+=(--quantization fp8)
+# shellcheck disable=SC2206
+[[ -n "${EXTRA:-}" ]] && CMD+=($EXTRA)
 
 mkdir -p logs
 echo "${CMD[*]}" > logs/serve_cmd.txt

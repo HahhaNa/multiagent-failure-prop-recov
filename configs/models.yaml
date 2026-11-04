@@ -18,3 +18,29 @@ qwen3-4b-cpu:
   backend: llama.cpp b11640 (CPU only)
   base_url: http://127.0.0.1:8080/v1
   concurrency: 2
+llama3.1-8b:
+  repo: unsloth/Llama-3.1-8B-Instruct   # ungated mirror of meta-llama/Llama-3.1-8B-Instruct
+  revision: 4699cc75b550f9c6f3173fb80f4703b62d946aa5
+  quantization: fp8-runtime
+  tool_parser: llama3_json
+  single_tool_calls: true
+granite3.3-8b:
+  repo: ibm-granite/granite-3.3-8b-instruct
+  revision: 51dd4bc2ade4059a6bd87649d68aa11e4fb2529b
+  quantization: fp8-runtime
+  tool_parser: granite
+ministral-8b:
+  repo: mistralai/Ministral-8B-Instruct-2410
+  revision: 2f494a194c5b980dfb9772cb92d26cbb671fce5a
+  quantization: fp8-runtime
+  tool_parser: mistral
+qwen3-4b:
+  repo: Qwen/Qwen3-4B-FP8
+  revision: 96b30dc13593a244a5e59e84687309f53c375cfa
+  quantization: fp8-checkpoint
+  tool_parser: hermes
+qwen3-14b:
+  repo: Qwen/Qwen3-14B-AWQ
+  revision: 31c69efc29464b6bb0aee1398b5a7b50a99340c3
+  quantization: awq-checkpoint
+  tool_parser: hermes

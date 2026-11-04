@@ -343,6 +343,8 @@ def main() -> None:
     elif a.stage == "restart":
         core = [c.id for c in conditions() if c.core] if a.core_only else None
         runs = restart_matrix(root, a.src, a.exp or "restart", core)
+    elif a.stage == "refs":  # clean go/no-go sample for a new model: selected tasks x modes, ref seeds 0-1
+        runs = expand(a.exp or f"refs_{a.model}", selected, modes, cfg["ref_seeds"][: a.k or 2], [], [], [])
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:
