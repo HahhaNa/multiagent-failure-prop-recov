@@ -43,15 +43,20 @@ def cpu_latency(exp: str = "cpu_qwen3-4b-cpu", gpu_exp: str = "main") -> pd.Data
         return pd.DataFrame()
     g = load(gpu_exp)
     g = g[(g.kind == "ref") & (g.ref_seed == 0) & g.task.isin(set(c.task))]
+    sets = [(f"CPU llama.cpp Qwen3-4B Q4 ({exp}), 2 slots", c, False), (f"GPU vLLM Qwen3-8B FP8 ({gpu_exp} refs seed 0; latencies as recorded, 64 concurrent episodes)", g, True)]
+    single = load("latency_qwen3-8b")
+    if not single.empty:
+        sets.append(("GPU vLLM Qwen3-8B FP8 (latency_qwen3-8b, single stream, seed 9)", single, False))
     rows = []
-    for name, df in ((f"CPU llama.cpp Qwen3-4B Q4 ({exp})", c), (f"GPU vLLM Qwen3-8B FP8 ({gpu_exp} refs seed 0, batched)", g)):
-        live = df.n_live_calls.replace(0, np.nan)
+    for name, df, replayed in sets:
         rows.append({
             "setting": name, "runs": len(df), "clean_success": df.utility.mean(), "stall": df.stalled.mean(),
             "llm_calls": df.n_llm_calls.mean(), "prompt_tokens": df.prompt_tokens.mean(), "completion_tokens": df.completion_tokens.mean(),
-            "wall_s_median": df.wall_s.median(), "wall_s_p90": df.wall_s.quantile(0.9),
-            "llm_latency_per_call_s": (df.llm_latency_live_s / live).median(),
-            "completion_tok_per_s": (df.completion_tokens / df.llm_latency_live_s.replace(0, np.nan)).median(),
+            # replayed runs have no meaningful wall time; recorded per-call latency comes from the original live calls
+            "wall_s_median": np.nan if replayed else df.wall_s.median(), "wall_s_p90": np.nan if replayed else df.wall_s.quantile(0.9),
+            "llm_s_per_episode": df.llm_latency_s.median(),
+            "llm_latency_per_call_s": (df.llm_latency_s / df.n_llm_calls.replace(0, np.nan)).median(),
+            "completion_tok_per_s": (df.completion_tokens / df.llm_latency_s.replace(0, np.nan)).median(),
         })
     return pd.DataFrame(rows)
 

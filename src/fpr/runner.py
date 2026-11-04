@@ -1,7 +1,7 @@
 """Resumable experiment runner. Each run is an immutable directory; DONE marks completion.
 
 Usage: python -m fpr.runner <stage> [--model qwen3-8b] [--mock] [--limit N]
-Stages: screen0 screen1 screen_all select pilot primary main main_wide t0 cpu verify_pilot verify restart cross status
+Stages: screen0 screen1 screen_all select pilot primary main main_wide t0 cpu latency verify_pilot verify restart cross status
 """
 
 import argparse
@@ -273,6 +273,7 @@ def main() -> None:
     ap.add_argument("--core-only", action="store_true")
     ap.add_argument("--modes", default="")
     ap.add_argument("--exp", default="")
+    ap.add_argument("--concurrency", type=int, default=0)
     ap.add_argument("--src", default="main", help="restart: faulted experiment to recover")
     a = ap.parse_args()
     cfg = load_cfg()
@@ -323,6 +324,8 @@ def main() -> None:
         runs = expand(a.exp or "t0", selected[:: max(1, len(selected) // 5)][:5], modes, cfg["ref_seeds"][:5], [], fc["clean_points"], cfg["branch_seeds"][:5])
     elif a.stage == "cpu":  # W6.4 CPU latency sample: 10 tasks x 2 modes, clean, seed 0
         runs = expand(a.exp or f"cpu_{a.model}", selected[:10], modes, [0], [], [], [])
+    elif a.stage == "latency":  # single-stream latency on the serving backend: same 20 tasks as cpu, uncached seed 9
+        runs = expand(a.exp or f"latency_{a.model}", selected[:10], modes, [9], [], [], [])
     elif a.stage == "verify_pilot":  # PLAN2 4: mini pilot, 5 tasks, k=1, clean refs only
         runs = expand(a.exp or "verify_pilot", selected[:: max(1, len(selected) // 5)][:5], modes, [0], [], [], [])
     elif a.stage == "verify":
@@ -340,7 +343,7 @@ def main() -> None:
     if a.limit:
         runs = runs[: a.limit]
     llm, model_name = make_llm(a, cfg, specs)
-    conc = yaml.safe_load((ROOT / "configs/models.yaml").read_text()).get(a.model, {}).get("concurrency", cfg["concurrency"])
+    conc = a.concurrency or yaml.safe_load((ROOT / "configs/models.yaml").read_text()).get(a.model, {}).get("concurrency", cfg["concurrency"])
     r = Runner(llm, cfg, specs, "mock" if a.mock else a.model, model_name, conc, root, verify=a.stage.startswith("verify"))
     (root / "logs").mkdir(parents=True, exist_ok=True)
     print(f"{a.stage}: {len(runs)} runs, {sum(1 for x in runs if r.is_done(x))} already done", flush=True)

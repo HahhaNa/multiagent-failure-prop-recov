@@ -1,0 +1,10 @@
+{
+ "exp": "main_wide",
+ "runs_done": 840,
+ "by_kind": {
+  "fault": 640,
+  "clean": 160,
+  "ref": 40
+ },
+ "tasks": 4
+}

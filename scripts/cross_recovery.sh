@@ -22,3 +22,4 @@ uv run --frozen python -m fpr.runner verify --model "$M" --core-only --modes mes
 stop_vllm
 scripts/serve.sh qwen3-8b --bg
 cp logs/serve_cmd.txt logs/serve_cmd_qwen3-8b.txt
+uv run --frozen python -m fpr.runner latency --model qwen3-8b --concurrency 1 || true
