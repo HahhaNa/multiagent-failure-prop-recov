@@ -34,6 +34,7 @@ ministral-8b:
   revision: 2f494a194c5b980dfb9772cb92d26cbb671fce5a
   quantization: fp8-runtime
   tool_parser: mistral
+  tool_call_ids: alnum9   # chat template requires 9-char alphanumeric tool call ids
 qwen3-4b:
   repo: Qwen/Qwen3-4B-FP8
   revision: 96b30dc13593a244a5e59e84687309f53c375cfa

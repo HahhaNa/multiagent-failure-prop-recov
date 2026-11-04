@@ -46,16 +46,31 @@ class LLM(Protocol):
     async def chat(self, req: ChatRequest, meta: dict) -> ChatResponse: ...
 
 
+def alnum9_ids(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rewrite tool call ids to 9 alphanumeric chars (required by Mistral chat templates); deterministic per id."""
+    h = lambda s: hashlib.sha1(s.encode()).hexdigest()[:9]
+    out = []
+    for m in messages:
+        m = dict(m)
+        if m.get("tool_calls"):
+            m["tool_calls"] = [{**tc, "id": h(tc["id"])} for tc in m["tool_calls"]]
+        if m.get("tool_call_id"):
+            m["tool_call_id"] = h(m["tool_call_id"])
+        out.append(m)
+    return out
+
+
 class OpenAIClient:
-    def __init__(self, base_url: str = "http://127.0.0.1:8000/v1", concurrency: int = 64, timeout_s: float = 900):
+    def __init__(self, base_url: str = "http://127.0.0.1:8000/v1", concurrency: int = 64, timeout_s: float = 900, alnum9: bool = False):
         self.base_url = base_url.rstrip("/")
+        self.alnum9 = alnum9
         self.sem = asyncio.Semaphore(concurrency)
         self.http = httpx.AsyncClient(timeout=timeout_s, limits=httpx.Limits(max_connections=concurrency + 8))
 
     async def chat(self, req: ChatRequest, meta: dict) -> ChatResponse:
         body: dict[str, Any] = {
             "model": req.model,
-            "messages": req.messages,
+            "messages": alnum9_ids(req.messages) if self.alnum9 else req.messages,
             "temperature": req.temperature,
             "seed": req.seed,
             "max_tokens": req.max_tokens,
@@ -71,8 +86,8 @@ class OpenAIClient:
                 t0 = time.perf_counter()
                 try:
                     r = await self.http.post(f"{self.base_url}/chat/completions", json=body)
-                    if r.status_code >= 500:
-                        raise httpx.HTTPStatusError(r.text[:300], request=r.request, response=r)
+                    if r.status_code >= 400:
+                        raise httpx.HTTPStatusError(f"{r.status_code}: {r.text[:300]}", request=r.request, response=r)
                     r.raise_for_status()
                     data = r.json()
                     break

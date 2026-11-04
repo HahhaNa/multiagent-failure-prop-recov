@@ -263,7 +263,9 @@ def make_llm(args, cfg, specs):
         return CachedLLM(MockLLM(specs), cache, "record"), "mock"
     models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
     m = models[args.model]
-    client = OpenAIClient(base_url=m.get("base_url", "http://127.0.0.1:8000/v1"), concurrency=m.get("concurrency", cfg["concurrency"]))
+    client = OpenAIClient(
+        base_url=m.get("base_url", "http://127.0.0.1:8000/v1"), concurrency=m.get("concurrency", cfg["concurrency"]), alnum9=m.get("tool_call_ids") == "alnum9"
+    )
     return CachedLLM(client, cache, "record"), m["repo"]
 
 
