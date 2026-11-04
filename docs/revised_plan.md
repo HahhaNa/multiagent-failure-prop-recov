@@ -22,7 +22,7 @@ All tables under `data/tables/` are regenerated with v3 (`FPR_LABELS`, default v
 | C6 | "No dependency graph is a reliable ground truth" (taint recall 0.55–0.62; union 0.72–0.73) | **Kept, conditional** | Stable across the three equivalence definitions (max change 0.02; V1). Recall rises with the number of clean continuations k (taint, adversarial: 0.49 / 0.53 / 0.55 at k = 1 / 3 / 5; V2); the k=10 check is PENDING and decides whether the k=5 values are reported or replaced. | Dependent labels at k=5 include rare clean behaviors (dependent share falls from 0.71 to 0.66 between k=1 and k=5, accidental), which lowers graph recall. k=10 bounds this. |
 | C7 | Irreversibility windows (3–4 steps for plan/executor attacks; 8–24 upstream) | **Kept, with a labeling caveat** | Fault-caused irreversible label agreement 106/108 = 0.98 [0.93, 0.99] over three rounds (`data/audit/audit_summary.md`). Under E1 a correct payment with a reworded free-text subject counts as fault-caused (round 3, branch 11). Post-hoc recount (Amendment 3, `data/tables/validation_main/v7_irreversible_by_definition_posthoc.csv`): adversarial P.out 0.94 and E.tool 0.79 under E1, E2 and E3; adversarial R.tool 0.45 (E1) vs 0.34 (E2); accidental R.start 0.20 vs 0.08, P.start 0.15 vs 0.09, R.tool 0.18 vs 0.12. Accidental upstream shares under E1 include reworded correct actions; the plan/executor-level result does not depend on the definition. `create_calendar_event` and `add_calendar_event_participants` send invitation emails but are labeled reversible in `configs/tools.yaml` (audit round 2, branches 3, 10), so external effects in workspace are undercounted. Relabeling and recount PENDING. | — |
 | C8 | Δ and recovery numbers on "harder tasks" (`main_wide`) | **Kept as exploratory** | 4 tasks; per-family CIs span up to 0.8 (e.g. adversarial message Δ 0.22 [−0.06, 0.54]). | — |
-| C9 | Cross-family check (Llama-3.2-3B) | **Withdrawn as evidence of generality** | Clean success 0.25; recovery differences sit at that floor. Replaced by the multi-model replication (§4). | — |
+| C9 | Cross-family check (Llama-3.2-3B) | **Withdrawn as evidence of generality** | Clean success 0.25; recovery differences sit at that floor. Replaced by the multi-model replication (§6): H1–H3 hold on Qwen3-8B and Qwen3-14B; H1 in state mode does not hold on Qwen3-4B. No second family has passed the gate yet. | Within-family replication cannot rule out Qwen-specific behavior (e.g. following plan steps literally). |
 
 ---
 
@@ -174,11 +174,27 @@ every model.
 |---|---|---|---|
 | Qwen3-8B FP8 | Qwen | main refs 0.86 / 0.79 | primary |
 | Qwen3-4B FP8 | Qwen | 0.55, 0.14 | full matrix done (seen before pre-registration; exploratory) |
-| Qwen3-14B AWQ | Qwen | 0.875, 0.00 | full matrix running |
+| Qwen3-14B AWQ | Qwen | 0.875, 0.00 | full matrix done (pre-registered hypotheses H1–H3) |
 | Llama-3.1-8B (FP8 at load) | Llama | 0.29, 0.50 | no-go: executor exhausts its turns after calls to tools outside its role |
 | Granite-3.3-8B (FP8 at load) | IBM | 0.07, 0.00 | no-go |
 | Ministral-8B (FP8 at load) | Mistral | 0.07, 1.00 (two runs) | invalid: chat template rejects the harness's tool-call ids, then non-alternating roles; rerun with mistral tokenizer mode PENDING |
 | Hermes-3-Llama-3.1-8B | Llama fine-tune | PENDING | backup |
+
+**Pre-registered hypotheses X1 per model** (`data/tables/models/summary.md`; `analysis/phase1_models.py`; runs
+`main_<model>`, `restart_<model>`, `verify_<model>`):
+
+| Hypothesis | Qwen3-4B (exploratory) | Qwen3-8B | Qwen3-14B |
+|---|---|---|---|
+| H1 adversarial > accidental P(propagated \| used), message | 0.78 vs 0.51 | 0.85 vs 0.47 | 0.82 vs 0.49 |
+| H1, state | 0.82 [0.77, 0.86] vs 0.71 [0.57, 0.84]: not supported | 0.79 vs 0.59 | 0.88 [0.84, 0.93] vs 0.60 [0.44, 0.74] |
+| H2 R1 − R0 utility, accidental > 0 | +0.26 [0.16, 0.35] | +0.27 [0.13, 0.40] | +0.36 [0.22, 0.48] |
+| H2 R1 − R0 harm, adversarial, CI contains 0 | yes | +0.02 [0.00, 0.04] | +0.01 [0.00, 0.04] |
+| H3 R3 − R0 harm, adversarial < 0 | −0.33 [−0.42, −0.23] | −0.39 [−0.45, −0.34] | −0.41 [−0.48, −0.35] |
+
+Observed but not pre-registered: R3 − R0 utility for adversarial faults is −0.01 [−0.14, 0.09] (4B), +0.14 [−0.02,
+0.30] (8B), +0.25 [0.12, 0.40] (14B). Alternative explanation that cannot be separated here: the verifier is the same
+model as the agents, so verifier capability and agent capability change together; X3 is needed to separate them.
+Declared ∪ taint recall is 0.62–0.65 (4B), 0.72–0.73 (8B), 0.73–0.74 (14B).
 
 **Open constraint: a capable second family.** If neither pending model passes the gate, generality across families is
 not shown, and the report says so. Qwen3-4B / 8B / 14B give a within-family scale comparison only.
