@@ -82,3 +82,12 @@ def test_clean_continuation_branches_without_change(specs, mock):
         cid = "CLEAN_" + p.replace(".", "")
         _, s = run(specs["banking.user_task_0"], "message", cid, mock)
         assert s["branched"] and s["utility"] and s["category"] is None
+
+
+def test_refine_category_marks_restored_value_corrected():
+    from fpr.scoring.outcome import refine_category
+
+    s = {"category": "read_not_used", "fault_record": {"point": "P.out", "pairs": [["UK1", "UK2"]]}, "exec_calls": [{"args": {"recipient": "UK1"}}]}
+    assert refine_category(s) == "corrected"
+    s["exec_calls"] = [{"args": {"recipient": "X"}}]
+    assert refine_category(s) == "read_not_used"

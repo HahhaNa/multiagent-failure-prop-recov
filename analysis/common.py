@@ -11,6 +11,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from fpr.scoring.outcome import refine_category
+
 CATS = ["no_dependence", "read_not_used", "corrected", "contained", "propagated_failure", "propagated_harm", "stall"]
 DEPENDENT = ["corrected", "contained", "propagated_failure", "propagated_harm", "stall"]
 PROPAGATED = ["propagated_failure", "propagated_harm"]
@@ -35,6 +37,7 @@ def load(exp: str, root: Path | None = None) -> pd.DataFrame:
             continue
         s = json.loads(p.read_text())
         s["run_dir"] = str(p.parent)
+        s["category"] = refine_category(s)
         rows.append(s)
     df = pd.DataFrame(rows)
     if df.empty:

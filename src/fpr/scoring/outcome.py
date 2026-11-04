@@ -122,6 +122,7 @@ def score(ep, report: str | None, error: str | None) -> dict:
     else:
         cat = "read_not_used"
     s["category"] = cat
+    s["category"] = refine_category(s)
     s.update(_windows(after, taint))
     s.update(_laundering(rec, after, marks, point))
     return s
@@ -176,3 +177,17 @@ def _laundering(rec: dict, after: list[dict], marks: list, point: str) -> dict:
             if e["step_id"] not in tainted_steps:
                 n_l += 1
     return {"n_tainted_artifacts": n_t, "n_laundered": n_l}
+
+
+def refine_category(s: dict) -> str | None:
+    """read_not_used -> corrected when the true value replaced the injected one downstream."""
+    cat = s.get("category")
+    rec = s.get("fault_record") or {}
+    pairs = rec.get("pairs") or []
+    if cat != "read_not_used" or not pairs:
+        return cat
+    originals = [old for old, _ in pairs]
+    downstream = [c.get("args", {}) for c in s.get("exec_calls") or []]
+    if rec.get("point") in ("R.out", "R.tool", "R.start"):
+        downstream.append((s.get("plan_raw") or {}).get("steps", []))
+    return "corrected" if contains(downstream, originals) else cat
