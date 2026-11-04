@@ -1,6 +1,7 @@
 """V4 label audit: agreement between the blind trace audit (data/audit/manual_*.json) and the automatic labels
 (run summaries, refined categories, main cf_artifacts). Threshold from docs/preregistration.md: >= 90% per label."""
 
+import argparse
 import json
 
 import pandas as pd
@@ -9,9 +10,12 @@ from common import DEPENDENT, ROOT, load, out_dir
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--round", default="", help="'' for the first audit, '2' for the fresh sample")
+    args = ap.parse_args()
     d = ROOT / "data/audit"
-    sample = {x["id"]: x for x in json.loads((d / "sample.json").read_text())}
-    manual = {x["id"]: x for f in sorted(d.glob("manual_*.json")) for x in json.loads(f.read_text())}
+    sample = {x["id"]: x for x in json.loads((d / f"sample{args.round}.json").read_text())}
+    manual = {x["id"]: x for f in sorted(d.glob(f"manual{args.round}_*.json")) for x in json.loads(f.read_text())}
     df = load("main").set_index("run_dir")
     arts = pd.read_csv(ROOT / "data/tables/main/cf_artifacts.csv.gz")
     tools = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
@@ -52,10 +56,10 @@ def main() -> None:
                     })
     s = pd.DataFrame(summary)
     o = out_dir("audit")
-    t.to_csv(o / "audit_branches.csv", index=False)
-    c.to_csv(o / "audit_calls.csv", index=False)
-    s.to_csv(o / "audit_agreement.csv", index=False, float_format="%.3f")
-    (o / "audit_agreement.md").write_text(s.to_markdown(index=False, floatfmt=".3f"))
+    t.to_csv(o / f"audit_branches{args.round}.csv", index=False)
+    c.to_csv(o / f"audit_calls{args.round}.csv", index=False)
+    s.to_csv(o / f"audit_agreement{args.round}.csv", index=False, float_format="%.3f")
+    (o / f"audit_agreement{args.round}.md").write_text(s.to_markdown(index=False, floatfmt=".3f"))
     print(s.to_string())
     print("calls without automatic label:", int(c.auto_dependent.isna().sum()))
 

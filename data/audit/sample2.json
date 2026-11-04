@@ -1,0 +1,578 @@
+[
+ {
+  "id": 1,
+  "condition": "A1p_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "message",
+  "task": "slack.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_9/message/A1p_R_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_9/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 2,
+  "condition": "A1p_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "state",
+  "task": "workspace.user_task_29",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_29/state/A1p_R_b100",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 3,
+  "condition": "A1p_P",
+  "family": "accidental",
+  "point": "P.out",
+  "mode": "message",
+  "task": "workspace.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_9/message/A1p_P_b100",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 4,
+  "condition": "A1p_P",
+  "family": "accidental",
+  "point": "P.out",
+  "mode": "state",
+  "task": "banking.user_task_0",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_0/state/A1p_P_b100",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_0/state/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_0/state/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_0/state/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_0/state/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_0/state/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 5,
+  "condition": "A1i_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "message",
+  "task": "slack.user_task_5",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_5/message/A1i_R_b102",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 6,
+  "condition": "A1i_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "state",
+  "task": "banking.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_9/state/A1i_R_b102",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 7,
+  "condition": "A2_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "message",
+  "task": "slack.user_task_8",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_8/message/A2_R_b101",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 8,
+  "condition": "A2_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "state",
+  "task": "banking.user_task_13",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_13/state/A2_R_b101",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 9,
+  "condition": "A3_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "message",
+  "task": "banking.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_9/message/A3_R_b101",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 10,
+  "condition": "A3_R",
+  "family": "accidental",
+  "point": "R.out",
+  "mode": "state",
+  "task": "workspace.user_task_18",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_18/state/A3_R_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 11,
+  "condition": "A4_R",
+  "family": "accidental",
+  "point": "R.start",
+  "mode": "message",
+  "task": "slack.user_task_5",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_5/message/A4_R_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/ref_s0",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/ref_s1",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/ref_s2",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/ref_s3",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/message/ref_s4"
+  ]
+ },
+ {
+  "id": 12,
+  "condition": "A4_R",
+  "family": "accidental",
+  "point": "R.start",
+  "mode": "state",
+  "task": "workspace.user_task_18",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_18/state/A4_R_b102",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/ref_s0",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/ref_s1",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/ref_s2",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/ref_s3",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/ref_s4"
+  ]
+ },
+ {
+  "id": 13,
+  "condition": "B1_Rt",
+  "family": "adversarial",
+  "point": "R.tool",
+  "mode": "message",
+  "task": "banking.user_task_13",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_13/message/B1_Rt_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_13/message/CLEAN_Rtool_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/message/CLEAN_Rtool_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/message/CLEAN_Rtool_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/message/CLEAN_Rtool_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/message/CLEAN_Rtool_b104"
+  ]
+ },
+ {
+  "id": 14,
+  "condition": "B1_Rt",
+  "family": "adversarial",
+  "point": "R.tool",
+  "mode": "state",
+  "task": "banking.user_task_13",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_13/state/B1_Rt_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rtool_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rtool_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rtool_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rtool_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_13/state/CLEAN_Rtool_b104"
+  ]
+ },
+ {
+  "id": 15,
+  "condition": "B1_Et",
+  "family": "adversarial",
+  "point": "E.tool",
+  "mode": "message",
+  "task": "workspace.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_9/message/B1_Et_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Etool_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Etool_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Etool_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Etool_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/message/CLEAN_Etool_b104"
+  ]
+ },
+ {
+  "id": 16,
+  "condition": "B1_Et",
+  "family": "adversarial",
+  "point": "E.tool",
+  "mode": "state",
+  "task": "slack.user_task_5",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_5/state/B1_Et_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_5/state/CLEAN_Etool_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/state/CLEAN_Etool_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/state/CLEAN_Etool_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/state/CLEAN_Etool_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_5/state/CLEAN_Etool_b104"
+  ]
+ },
+ {
+  "id": 17,
+  "condition": "B2_R",
+  "family": "adversarial",
+  "point": "R.out",
+  "mode": "message",
+  "task": "slack.user_task_12",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_12/message/B2_R_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_12/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_12/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_12/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_12/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_12/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 18,
+  "condition": "B2_R",
+  "family": "adversarial",
+  "point": "R.out",
+  "mode": "state",
+  "task": "workspace.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_9/state/B2_R_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_9/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 19,
+  "condition": "B2_P",
+  "family": "adversarial",
+  "point": "P.out",
+  "mode": "message",
+  "task": "workspace.user_task_20",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_20/message/B2_P_b102",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 20,
+  "condition": "B2_P",
+  "family": "adversarial",
+  "point": "P.out",
+  "mode": "state",
+  "task": "workspace.user_task_20",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_20/state/B2_P_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/state/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/state/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/state/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/state/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/state/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 21,
+  "condition": "B3_S",
+  "family": "adversarial",
+  "point": "S.write",
+  "mode": "state",
+  "task": "slack.user_task_8",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_8/state/B3_S_b100",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 22,
+  "condition": "B3_S",
+  "family": "adversarial",
+  "point": "S.write",
+  "mode": "state",
+  "task": "workspace.user_task_7",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_7/state/B3_S_b102",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 23,
+  "condition": "A1p_Rt",
+  "family": "accidental",
+  "point": "R.tool",
+  "mode": "message",
+  "task": "workspace.user_task_20",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_20/message/A1p_Rt_b100",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Rtool_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Rtool_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Rtool_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Rtool_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_20/message/CLEAN_Rtool_b104"
+  ]
+ },
+ {
+  "id": 24,
+  "condition": "A1p_Rt",
+  "family": "accidental",
+  "point": "R.tool",
+  "mode": "state",
+  "task": "workspace.user_task_18",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_18/state/A1p_Rt_b100",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rtool_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rtool_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rtool_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rtool_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rtool_b104"
+  ]
+ },
+ {
+  "id": 25,
+  "condition": "A1p_S",
+  "family": "accidental",
+  "point": "S.write",
+  "mode": "state",
+  "task": "banking.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_9/state/A1p_S_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/state/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 26,
+  "condition": "A1p_S",
+  "family": "accidental",
+  "point": "S.write",
+  "mode": "state",
+  "task": "workspace.user_task_18",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_18/state/A1p_S_b102",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Pout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Pout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Pout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Pout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Pout_b104"
+  ]
+ },
+ {
+  "id": 27,
+  "condition": "A1p_Et",
+  "family": "accidental",
+  "point": "E.tool",
+  "mode": "message",
+  "task": "workspace.user_task_18",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_18/message/A1p_Et_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/message/CLEAN_Etool_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/message/CLEAN_Etool_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/message/CLEAN_Etool_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/message/CLEAN_Etool_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/message/CLEAN_Etool_b104"
+  ]
+ },
+ {
+  "id": 28,
+  "condition": "A1p_Et",
+  "family": "accidental",
+  "point": "E.tool",
+  "mode": "state",
+  "task": "slack.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_9/state/A1p_Et_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_9/state/CLEAN_Etool_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/state/CLEAN_Etool_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/state/CLEAN_Etool_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/state/CLEAN_Etool_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_9/state/CLEAN_Etool_b104"
+  ]
+ },
+ {
+  "id": 29,
+  "condition": "A4_P",
+  "family": "accidental",
+  "point": "P.start",
+  "mode": "message",
+  "task": "banking.user_task_9",
+  "run_dir": "/home/hanna/fpr-runs/main/banking.user_task_9/message/A4_P_b100",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/banking.user_task_9/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 30,
+  "condition": "A4_P",
+  "family": "accidental",
+  "point": "P.start",
+  "mode": "state",
+  "task": "slack.user_task_8",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_8/state/A4_P_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 31,
+  "condition": "B4_R",
+  "family": "adversarial",
+  "point": "R.out",
+  "mode": "message",
+  "task": "slack.user_task_7",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_7/message/B4_R_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_7/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 32,
+  "condition": "B4_R",
+  "family": "adversarial",
+  "point": "R.out",
+  "mode": "state",
+  "task": "workspace.user_task_18",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_18/state/B4_R_b101",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_18/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 33,
+  "condition": "BP_R",
+  "family": "control",
+  "point": "R.out",
+  "mode": "message",
+  "task": "slack.user_task_8",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_8/message/BP_R_b104",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_8/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 34,
+  "condition": "BP_R",
+  "family": "control",
+  "point": "R.out",
+  "mode": "state",
+  "task": "slack.user_task_7",
+  "run_dir": "/home/hanna/fpr-runs/main/slack.user_task_7/state/BP_R_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/slack.user_task_7/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/slack.user_task_7/state/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 35,
+  "condition": "NC_R",
+  "family": "control",
+  "point": "R.out",
+  "mode": "message",
+  "task": "workspace.user_task_29",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_29/message/NC_R_b103",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/message/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/message/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/message/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/message/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_29/message/CLEAN_Rout_b104"
+  ]
+ },
+ {
+  "id": 36,
+  "condition": "NC_R",
+  "family": "control",
+  "point": "R.out",
+  "mode": "state",
+  "task": "workspace.user_task_7",
+  "run_dir": "/home/hanna/fpr-runs/main/workspace.user_task_7/state/NC_R_b101",
+  "clean_dirs": [
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Rout_b100",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Rout_b101",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Rout_b102",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Rout_b103",
+   "/home/hanna/fpr-runs/main/workspace.user_task_7/state/CLEAN_Rout_b104"
+  ]
+ }
+]

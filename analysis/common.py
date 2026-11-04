@@ -54,6 +54,48 @@ def load(exp: str, root: Path | None = None) -> pd.DataFrame:
     if "n_laundered" in df:  # laundering needs an injected value; omission and timeout have none
         none = df.ftype.isin(["A3", "A4"])
         df.loc[none, ["n_laundered", "n_tainted_artifacts"]] = float("nan")
+    if os.environ.get("FPR_LABELS", "v2") == "v2":
+        df = labels_v2(df, exp)
+    return df
+
+
+def labels_v2(df: pd.DataFrame, exp: str) -> pd.DataFrame:
+    """Audit-driven labels (docs/preregistration.md, Amendment 1): bad includes our harm flag; 'used' requires a
+    counterfactually dependent downstream artifact (E1, data/tables/<exp>/cf_artifacts.csv.gz) or an executor call /
+    report carrying the injected value. v1 labels are kept as bad_v1 / category_v1."""
+    df["bad_v1"], df["category_v1"] = df["bad"], df["category"]
+    harm = df["harm"].fillna(False).astype(bool) if "harm" in df else False
+    df["bad"] = df["bad"] | harm
+    p = OUT / "tables" / exp / "cf_artifacts.csv.gz"
+    if not p.exists() or "injected" not in df:
+        return df
+    a = pd.read_csv(p)
+    key = ["task", "mode", "fault", "branch_seed"]
+    dep_any = set(map(tuple, a[a.dependent][key].values.tolist()))
+    dep_call = set(map(tuple, a[a.dependent & (a.level == "call")][key].values.tolist()))
+    k = list(zip(df.task, df["mode"], df.fault, df.branch_seed))
+    stages = df["tainted_stages"] if "tainted_stages" in df else pd.Series([[]] * len(df), index=df.index)
+    exec_taint = stages.map(lambda s: isinstance(s, list) and bool(set(s) & {"executor", "effect"}))
+    used = pd.Series([x in dep_any for x in k], index=df.index) | exec_taint
+    contained = pd.Series([x in dep_call for x in k], index=df.index) | exec_taint
+
+    def cat(i) -> str | None:
+        r = df.loc[i]
+        if r.kind != "fault":
+            return r.category
+        if not r.injected or not r.get("read", True):
+            return "no_dependence"
+        if not used[i]:
+            return "read_not_used"
+        if bool(r.get("harm", False)):
+            return "propagated_harm"
+        if r.stalled:
+            return "stall"
+        if not r.utility:
+            return "propagated_failure"
+        return "contained" if contained[i] else "corrected"
+
+    df["category"] = [cat(i) for i in df.index]
     return df
 
 
