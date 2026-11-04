@@ -91,19 +91,19 @@ effect before any recovery, by injection stage. (b, c) Utility and residual harm
 
 ## Appendix A. Timeline and milestones
 
-**Phase 1 (completed; hours since start of the 21-hour build budget)**
+**Phase 1 milestones**
 
-| Milestone | Deliverable and acceptance test | Done at |
+| Milestone | Deliverable and acceptance test | Status |
 |---|---|---|
-| M0 Setup | vLLM serving Qwen3-8B FP8, tool call with thinking off, repo and hooks | H0.3 |
-| M1–M3 Workflow, tracing, faults | 3 agents on MockLLM; snapshot restore exact; replay with 0 live calls; each fault injects and is detected downstream | H1.1 |
-| M4 Runner | matrix expansion, identical fault/clean prefixes, resume without duplicates, 64 concurrent episodes | H1.1 |
-| M5 Real runs | screening 33 → 14 tasks, pilot go/no-go, primary matrix, cross-family check | H1.8 |
-| W1 Main matrix | 18 conditions × 5 seeds × 2 modes, full traces (3,080 runs) | H2.5 |
-| W2–W3 Recovery baselines | R3 verify-all (3,080 runs), R1 restart (2,010 runs) | H3.2 |
-| W4–W5 Analysis | counterfactual dependence, graph accuracy, irreversibility, recovery, all figures with CIs | H3.4 |
-| W6 Robustness | harder tasks, T=0 noise floor, CPU vs GPU latency, cross-family recovery | H3.8 |
-| W7 Submission | README, report, data export, fresh-clone check | H9.3 |
+| M0 Setup | vLLM serving Qwen3-8B FP8, tool call with thinking off, repo and hooks | done |
+| M1–M3 Workflow, tracing, faults | 3 agents on MockLLM; snapshot restore exact; replay with 0 live calls; each fault injects and is detected downstream | done |
+| M4 Runner | matrix expansion, identical fault/clean prefixes, resume without duplicates, 64 concurrent episodes | done |
+| M5 Real runs | screening 33 → 14 tasks, pilot go/no-go, primary matrix, cross-family check | done |
+| W1 Main matrix | 18 conditions × 5 seeds × 2 modes, full traces (3,080 runs) | done |
+| W2–W3 Recovery baselines | R3 verify-all (3,080 runs), R1 restart (2,010 runs) | done |
+| W4–W5 Analysis | counterfactual dependence, graph accuracy, irreversibility, recovery, all figures with CIs | done |
+| W6 Robustness | harder tasks, T=0 noise floor, CPU vs GPU latency, cross-family recovery | done |
+| W7 Submission | README, report, data export, fresh-clone check | done |
 | W8 Breadth | full matrix on Qwen3-4B (done), Qwen3-14B and other 8B families (gate) | in progress |
 | W9 Validation | pre-registration, 3 label audits, equivalence and k sensitivity, statistics, task-selection record | in progress |
 
