@@ -1,0 +1,64 @@
+"""V4 label audit: agreement between the blind trace audit (data/audit/manual_*.json) and the automatic labels
+(run summaries, refined categories, main cf_artifacts). Threshold from docs/preregistration.md: >= 90% per label."""
+
+import json
+
+import pandas as pd
+import yaml
+from common import DEPENDENT, ROOT, load, out_dir
+
+
+def main() -> None:
+    d = ROOT / "data/audit"
+    sample = {x["id"]: x for x in json.loads((d / "sample.json").read_text())}
+    manual = {x["id"]: x for f in sorted(d.glob("manual_*.json")) for x in json.loads(f.read_text())}
+    df = load("main").set_index("run_dir")
+    arts = pd.read_csv(ROOT / "data/tables/main/cf_artifacts.csv.gz")
+    tools = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
+    ext = {n for s in tools.values() for n, v in s.get("write", {}).items() if v.get("external")}
+    ext_read = {n for s in tools.values() for n in s.get("read_external", [])}
+    rows, calls = [], []
+    for i, m in sorted(manual.items()):
+        s = sample[i]
+        r = df.loc[s["run_dir"]]
+        bk = (arts.task == s["task"]) & (arts["mode"] == s["mode"]) & (arts.fault == s["condition"]) & (arts.branch_seed == int(s["run_dir"].rsplit("_b", 1)[1]))
+        a = arts[bk & (arts.level == "call")]
+        eff = a[a.ok & a.rev.isin(["irreversible", "compensable"]) & a.dependent]
+        auto = {
+            "bad": bool(r.bad),
+            "read": r.category != "no_dependence",
+            "used": r.category in DEPENDENT,
+            "fault_caused_irreversible": bool(eff.name.isin(ext | ext_read).any()),
+            "fault_caused_irreversible_writes_only": bool(eff.name.isin(ext).any()),
+        }
+        man = {k: bool(m[k]) for k in ("bad", "read", "used", "fault_caused_irreversible")}
+        man["fault_caused_irreversible_writes_only"] = man["fault_caused_irreversible"]
+        rows.append({"id": i, "condition": s["condition"], "mode": s["mode"], "task": s["task"], "category": r.category, "confidence": m.get("confidence"),
+                     **{f"auto_{k}": v for k, v in auto.items()}, **{f"manual_{k}": v for k, v in man.items()}, "notes": m.get("notes", "")})
+        dep = dict(zip(a.node.str.removeprefix("tool:"), a.dependent))
+        for c in m.get("calls", []):
+            calls.append({"id": i, "call_id": c["call_id"], "name": c["name"], "manual_dependent": bool(c["dependent"]), "auto_dependent": dep.get(c["call_id"])})
+    t = pd.DataFrame(rows)
+    c = pd.DataFrame(calls)
+    summary = []
+    for k in ("bad", "read", "used", "fault_caused_irreversible", "fault_caused_irreversible_writes_only"):
+        agree = t[f"auto_{k}"] == t[f"manual_{k}"]
+        summary.append({"label": k, "n": len(t), "agree": int(agree.sum()), "agreement": agree.mean(), "pass_90": agree.mean() >= 0.9,
+                        "disagreeing_ids": ",".join(str(x) for x in t.id[~agree])})
+    cc = c.dropna(subset=["auto_dependent"])
+    agree = cc.auto_dependent.astype(bool) == cc.manual_dependent
+    summary.append({"label": "call_dependent", "n": len(cc), "agree": int(agree.sum()), "agreement": agree.mean() if len(cc) else float("nan"),
+                    "pass_90": bool(len(cc) and agree.mean() >= 0.9), "disagreeing_ids": ",".join(sorted({str(x) for x in cc.id[~agree]})),
+                    })
+    s = pd.DataFrame(summary)
+    o = out_dir("audit")
+    t.to_csv(o / "audit_branches.csv", index=False)
+    c.to_csv(o / "audit_calls.csv", index=False)
+    s.to_csv(o / "audit_agreement.csv", index=False, float_format="%.3f")
+    (o / "audit_agreement.md").write_text(s.to_markdown(index=False, floatfmt=".3f"))
+    print(s.to_string())
+    print("calls without automatic label:", int(c.auto_dependent.isna().sum()))
+
+
+if __name__ == "__main__":
+    main()
