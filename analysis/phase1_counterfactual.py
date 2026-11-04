@@ -129,6 +129,7 @@ def artifact_rows(df: pd.DataFrame, ext: dict[str, dict]) -> pd.DataFrame:
                     "branch_seed": r.branch_seed, "level": kind[:-1], "node": a["node"],
                     "dependent": a["sig"] not in u[kind],
                     "declared": a["node"] in dec, "dataflow": a["node"] in flow, "taint": a["node"] in taint,
+                    "declared_taint": a["node"] in dec or a["node"] in taint,
                     "name": a.get("name"), "rev": a.get("rev"), "ok": a.get("ok", True), "steps": a.get("steps"), "tokens": a.get("tokens"),
                 })
     return pd.DataFrame(rows)
@@ -149,7 +150,7 @@ def graph_accuracy(a: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
     groups = a.groupby(keys) if keys else [((), a)]
     for k, g in groups:
         k = k if isinstance(k, tuple) else (k,)
-        for col in ("declared", "dataflow", "taint"):
+        for col in ("declared", "dataflow", "taint", "declared_taint"):
             m = prf(g, col)
             ci = boot_ci(g, lambda t, c=col: prf(t, c)["f1"])
             rows.append({**dict(zip(keys, k)), "graph": col, "n_artifacts": len(g), "dependent_share": g.dependent.mean(), **m, "f1_lo": ci[0], "f1_hi": ci[1]})
