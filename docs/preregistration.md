@@ -141,3 +141,10 @@ Fix, fixed now and applied unchanged:
    round 3 is below 0.90, every claim that depends on `used` (dependence rate, P(propagated | used), the
    read-not-used / corrected / contained shares) is withdrawn, and only labels that passed (bad without task 9,
    fault-caused irreversible, per-call dependence, Δ) are used. No further labeler changes after round 3.
+
+## Amendment 3 (2026-11-04, before running; post-hoc, exploratory)
+
+Motivated by audit round 3 (branch 11: a correct payment whose free-text subject differs from every clean run counts
+as a fault-caused irreversible effect under E1). The share of branches with a fault-caused irreversible or
+compensable effect is recomputed under E1, E2 and E3 (definitions in V1), per family and injection point. This
+analysis was not planned before the audit and is reported as exploratory; E1 remains the primary definition.
