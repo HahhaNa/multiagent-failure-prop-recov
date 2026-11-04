@@ -273,7 +273,7 @@ def main() -> None:
     elif a.stage == "pilot":
         tasks = selected[:: max(1, len(selected) // 5)][:5]
         fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
-        runs = expand("pilot", tasks, modes, [0], conditions(include_controls=True), fc["clean_points"], [cfg["branch_seeds"][0]])
+        runs = expand(a.exp or "pilot", tasks, modes, [0], conditions(include_controls=True), fc["clean_points"], [cfg["branch_seeds"][0]])
     elif a.stage == "primary":
         runs = primary_matrix(selected, k=a.k, core_only=a.core_only, modes=modes, exp=a.exp or "primary")
     elif a.stage == "cross":

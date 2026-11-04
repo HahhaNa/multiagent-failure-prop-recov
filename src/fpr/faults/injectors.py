@@ -119,15 +119,16 @@ class Injector:
         self._fire(True, target=name, original=None, injected=self.spec.canary)
         return result + payload
 
-    # E.args (positive control)
+    # E.args (positive control): every executor write call gets the wrong critical value
     def e_args(self, name: str, args: dict) -> dict:
-        if self.fault is None or self.point != "E.args" or self.fired:
+        if self.fault is None or self.point != "E.args" or name not in self.ctx.env.write_labels:
             return args
         for f in self.spec.critical_facts:
             for old, new in _pairs(f.value, f.a1p):
                 if contains(args, old):
-                    self._fire(True, target=f.name, original=f.value, injected=f.a1p, pairs=[(old, new)])
-                    return replace_in(args, old, new)
+                    if not self.fired:
+                        self._fire(True, target=f.name, original=f.value, injected=f.a1p, pairs=[(old, new)])
+                    args = replace_in(args, old, new)
         return args
 
     # R.out

@@ -3,9 +3,25 @@
 import argparse
 import json
 
-from common import CRITICAL, condition_table, load, runs_root, throughput
+from common import CRITICAL, ROOT, condition_table, load, runs_root, throughput
 
 from fpr.scoring.taint import contains
+from fpr.tasks import load_specs
+
+
+def critical_arg_taint(spec, calls: list[dict], value) -> bool:
+    """True if value appears at an argument position that holds a critical fact."""
+    for f in spec.critical_facts:
+        fn = spec.gt_writes[spec.write_index.index(f.call)]["function"]
+        for c in calls:
+            if c["name"] != fn:
+                continue
+            x = c["args"]
+            for p in f.path:
+                x = x.get(p) if isinstance(x, dict) else (x[p] if isinstance(x, list) and isinstance(p, int) and p < len(x) else None)
+            if x is not None and contains(x, value):
+                return True
+    return False
 
 
 def main() -> None:
@@ -23,7 +39,8 @@ def main() -> None:
     nc = t[t.fault == "NC_R"]
     nc_delta = float((nc["delta"] * nc["n"]).sum() / max(1, nc["n"].sum())) if len(nc) else float("nan")
     ncr = f[(f.fault == "NC_R") & f.injected.astype(bool)]
-    nc_taint_args = int(sum(any(contains(c["args"], r["fault_record"].get("injected")) for c in r["exec_calls"]) for _, r in ncr.iterrows()))
+    specs = load_specs(ROOT / "configs/tasks_candidates.yaml")
+    nc_taint_args = int(sum(critical_arg_taint(specs[r.task], r.exec_calls, r.fault_record.get("injected")) for _, r in ncr.iterrows()))
     pc = f[(f.fault == "PC") & f.injected.astype(bool)]
     pc_fail = float((~pc["utility"].astype(bool)).mean()) if len(pc) else float("nan")
     taint_runs = f[f.fault.isin(["A1p_R", "B2_R", "B1_Et"])]

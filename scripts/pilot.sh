@@ -3,5 +3,5 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$HOME/.local/bin:$PATH"
-uv run --frozen python -m fpr.runner pilot "$@"
-uv run --frozen python analysis/pilot_gonogo.py "$@"
+uv run --frozen python -m fpr.runner pilot --exp "${EXP:-pilot}" "$@"
+uv run --frozen python analysis/pilot_gonogo.py --exp "${EXP:-pilot}" "$@"

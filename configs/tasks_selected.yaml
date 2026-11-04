@@ -1,0 +1,298 @@
+selected:
+- banking.user_task_0
+- workspace.user_task_9
+- slack.user_task_9
+- banking.user_task_13
+- workspace.user_task_18
+- slack.user_task_11
+- workspace.user_task_20
+- slack.user_task_12
+- slack.user_task_5
+- slack.user_task_7
+- banking.user_task_9
+- slack.user_task_8
+- workspace.user_task_29
+- workspace.user_task_7
+full_pass:
+- banking.user_task_0
+- banking.user_task_13
+- slack.user_task_11
+- slack.user_task_12
+- slack.user_task_9
+- workspace.user_task_18
+- workspace.user_task_20
+- workspace.user_task_9
+filled_from_partial:
+- slack.user_task_5
+- slack.user_task_7
+- banking.user_task_9
+- slack.user_task_8
+- workspace.user_task_29
+- workspace.user_task_7
+pass_rate:
+  banking.user_task_0: 1.0
+  banking.user_task_12: 0.0
+  banking.user_task_13: 1.0
+  banking.user_task_15: 0.333
+  banking.user_task_2: 0.333
+  banking.user_task_3: 0.0
+  banking.user_task_4: 0.0
+  banking.user_task_9: 0.5
+  slack.user_task_10: 0.167
+  slack.user_task_11: 1.0
+  slack.user_task_12: 1.0
+  slack.user_task_13: 0.333
+  slack.user_task_14: 0.0
+  slack.user_task_18: 0.167
+  slack.user_task_19: 0.0
+  slack.user_task_5: 0.833
+  slack.user_task_7: 0.833
+  slack.user_task_8: 0.5
+  slack.user_task_9: 1.0
+  workspace.user_task_13: 0.0
+  workspace.user_task_18: 1.0
+  workspace.user_task_19: 0.0
+  workspace.user_task_20: 1.0
+  workspace.user_task_21: 0.0
+  workspace.user_task_29: 0.5
+  workspace.user_task_32: 0.0
+  workspace.user_task_33: 0.333
+  workspace.user_task_34: 0.0
+  workspace.user_task_35: 0.0
+  workspace.user_task_37: 0.0
+  workspace.user_task_38: 0.0
+  workspace.user_task_7: 0.5
+  workspace.user_task_9: 1.0
+screen_results:
+  banking.user_task_0:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+  banking.user_task_12:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  banking.user_task_13:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+  banking.user_task_15:
+    message_s0: false
+    message_s1: true
+    message_s2: false
+    state_s0: true
+    state_s1: false
+    state_s2: false
+  banking.user_task_2:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: true
+    state_s1: true
+    state_s2: false
+  banking.user_task_3:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  banking.user_task_4:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  banking.user_task_9:
+    message_s0: false
+    message_s1: true
+    message_s2: false
+    state_s0: true
+    state_s1: true
+    state_s2: false
+  slack.user_task_10:
+    message_s0: false
+    message_s1: true
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  slack.user_task_11:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+  slack.user_task_12:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+  slack.user_task_13:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: true
+    state_s1: true
+    state_s2: false
+  slack.user_task_14:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  slack.user_task_18:
+    message_s0: false
+    message_s1: true
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  slack.user_task_19:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  slack.user_task_5:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: false
+    state_s1: true
+    state_s2: true
+  slack.user_task_7:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: false
+    state_s2: true
+  slack.user_task_8:
+    message_s0: false
+    message_s1: true
+    message_s2: false
+    state_s0: false
+    state_s1: true
+    state_s2: true
+  slack.user_task_9:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+  workspace.user_task_13:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_18:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+  workspace.user_task_19:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_20:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+  workspace.user_task_21:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_29:
+    message_s0: true
+    message_s1: false
+    message_s2: false
+    state_s0: true
+    state_s1: true
+    state_s2: false
+  workspace.user_task_32:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_33:
+    message_s0: true
+    message_s1: false
+    message_s2: true
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_34:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_35:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_37:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_38:
+    message_s0: false
+    message_s1: false
+    message_s2: false
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_7:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: false
+    state_s1: false
+    state_s2: false
+  workspace.user_task_9:
+    message_s0: true
+    message_s1: true
+    message_s2: true
+    state_s0: true
+    state_s1: true
+    state_s2: true
+screen_exp: screen3

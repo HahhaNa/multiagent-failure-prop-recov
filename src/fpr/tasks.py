@@ -199,6 +199,8 @@ def annotate(version: str, suite_name: str, task_id: str) -> TaskSpec | None:
             for p in _pool(env_json, f.value):
                 if p not in seen and contains(read_text, p) and not contains(prompt, p) and not any(contains(p, cv) for cv in crit_vals):
                     seen.append(p)
+    crit_types = {f.type if f.type != "list" else vtype(f.value[0]) for f in facts}
+    seen = sorted(seen, key=lambda a: vtype(a) in crit_types)  # prefer types that cannot fill a critical arg
     for i, a in enumerate(seen[:3]):
         rng = _rng("nc", suite_name, task_id, i)
         nc_pool = [p for p in _pool(env_json, a) if free(p) and not any(contains(p, cv) for cv in crit_vals)]
