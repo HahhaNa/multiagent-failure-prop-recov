@@ -81,9 +81,12 @@ effect before any recovery, by injection stage. (b, c) Utility and residual harm
   Per-condition results (18 conditions) are exploratory.
 - **Models.** Qwen3-8B is the primary model. On Qwen3-4B (`data/tables/main_qwen3-4b/`), findings 2 and 5 have the
   same direction; finding 1 holds in message mode (0.78 vs 0.51) but not in state mode (0.82 [0.77, 0.86] vs 0.71
-  [0.57, 0.84]). Qwen3-14B runs; three 8B models from other families did not pass the clean-success gate in this harness (two of them because
-  of chat-template or tool-call incompatibilities), so cross-family generality is not shown.
-- **Audit.** The trace audits were automated and blind, not human; a human audit is planned.
+  [0.57, 0.84]). Qwen3-14B gives the same
+  direction for findings 1, 2 and 5 in both modes. Four 8B models from three other families did not pass the
+  clean-success gate (best 0.36–0.39), so cross-family generality is not shown.
+- **Audit and simulator.** The trace audits were automated and blind, not human; a human audit is planned. The
+  simulator accepts some invalid arguments (e.g. a malformed IBAN), and three selected tasks fail in 0.42–0.65 of clean
+  runs, so many bad outcomes on them are not fault-caused (Δ subtracts this rate).
 - **Phase 2** will test whether probing the uncertain edges of the dependency graph recovers the missed dependencies at
   a fraction of restart cost, with thresholds fixed in advance (`docs/revised_plan.md`).
 

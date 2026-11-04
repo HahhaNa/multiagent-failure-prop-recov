@@ -11,11 +11,21 @@ from common import DEPENDENT, ROOT, load, out_dir
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--round", default="", help="'' for the first audit, '2' for the fresh sample")
+    ap.add_argument("--round", default="", help="'' (round 1), '2', '3', or 'human' (data/audit/human_labels.csv)")
     args = ap.parse_args()
     d = ROOT / "data/audit"
-    sample = {x["id"]: x for x in json.loads((d / f"sample{args.round}.json").read_text())}
-    manual = {x["id"]: x for f in sorted(d.glob(f"manual{args.round}_*.json")) for x in json.loads(f.read_text())}
+    sample = {x["id"]: x for x in json.loads((d / f"sample{'' if args.round == 'human' else args.round}.json").read_text())} if args.round != "human" else {}
+    if args.round == "human":  # human labels for the round-3 sample, filled in data/audit/human_labels.csv
+        sample = {x["id"]: x for x in json.loads((d / "sample3.json").read_text())}
+        tf = {"true": True, "false": False, "1": True, "0": False, "yes": True, "no": False}
+        h = pd.read_csv(d / "human_labels.csv", dtype=str).fillna("")
+        h = h[h.bad.str.lower().isin(tf)]
+        manual = {int(r.id): {"bad": tf[r.bad.lower()], "read": True, "used": tf.get(r.used.lower(), False),
+                              "fault_caused_irreversible": tf.get(r.irreversible.lower(), False), "calls": [], "notes": r.notes} for r in h.itertuples()}
+    else:
+        manual = {x["id"]: x for f in sorted(d.glob(f"manual{args.round}_*.json")) for x in json.loads(f.read_text())}
+    if not manual:
+        raise SystemExit("no filled rows (data/audit/human_labels.csv)" if args.round == "human" else "no audit files")
     df = load("main").set_index("run_dir")
     arts = pd.read_csv(ROOT / "data/tables/main/cf_artifacts.csv.gz")
     tools = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
