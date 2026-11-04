@@ -35,6 +35,7 @@ class Ctx:
     max_tokens: int
     branched: bool = False
     expect_replay: bool = False
+    single_tool_calls: bool = False  # chat template accepts one tool call per assistant turn
     counters: dict[str, int] = field(default_factory=dict)
     usage: dict[str, int] = field(default_factory=lambda: {"prompt": 0, "completion": 0, "calls": 0, "live": 0})
 
@@ -122,10 +123,14 @@ async def tool_loop(
     """Run tool turns until the model answers without tool calls. Returns (final text or None, messages)."""
     for _ in range(max_turns):
         resp = await ctx.chat(agent, messages, tools)
-        messages.append(assistant_msg(resp))
         if not resp.tool_calls:
+            messages.append(assistant_msg(resp))
             return resp.content or "", messages
-        for tc in resp.tool_calls:
+        if not ctx.single_tool_calls:
+            messages.append(assistant_msg(resp))
+        for k, tc in enumerate(resp.tool_calls):
+            if ctx.single_tool_calls:
+                messages.append(assistant_msg(resp.model_copy(update={"tool_calls": [tc], "content": resp.content if k == 0 else ""})))
             args, err = parse_args(tc.arguments)
             step_id = args.pop("step_id", None) if isinstance(args, dict) else None
             if on_args is not None and err is None:

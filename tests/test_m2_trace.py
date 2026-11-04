@@ -80,3 +80,9 @@ def test_graphs_declared_and_dataflow(specs, mock):
         assert ("findings", "plan") in g["dataflow"]
         assert any(a == "plan" and b.startswith("tool:ecall") for a, b in g["dataflow"])
         assert "step:s1" in g["tainted"] and any(n.startswith("tool:ecall") for n in g["tainted"])
+
+
+def test_single_tool_call_history(specs, mock):
+    ep = Episode(EpisodeConfig(spec=specs["slack.user_task_13"], mode="message", single_tool_calls=True), mock)
+    s = asyncio.run(ep.run())
+    assert s["utility"]

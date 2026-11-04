@@ -121,6 +121,8 @@ class Runner:
         self.root = root
         self.sem = asyncio.Semaphore(concurrency)
         self.manifest = base_manifest(cfg, model_alias)
+        models = yaml.safe_load((ROOT / "configs/models.yaml").read_text())
+        self.single_tool_calls = bool(models.get(model_alias, {}).get("single_tool_calls", False))
         self.stats = {"done": 0, "skipped": 0, "failed": 0, "live_calls": 0, "t0": time.time()}
         self.executed: list[str] = []
 
@@ -147,6 +149,7 @@ class Runner:
                 spec=self.specs[r.task], mode=r.mode, fault_id=r.fault, ref_seed=r.ref_seed, branch_seed=r.branch_seed,
                 model=self.model_name, temperature=c["temperature"], max_tokens=c["max_tokens"], version=c["benchmark_version"],
                 turns=c["turns"], clock=c["clock"], tool_output_chars=c["tool_output_chars"], expect_replay=r.fault is not None,
+                single_tool_calls=self.single_tool_calls,
             )
             man = {**self.manifest, "run": r.__dict__, "seed": r.ref_seed, "branch_seed": r.branch_seed, "start": datetime.now().isoformat()}
             (d / "manifest.json").write_text(json.dumps(man, indent=1))

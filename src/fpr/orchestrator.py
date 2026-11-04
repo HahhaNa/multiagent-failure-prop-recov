@@ -41,6 +41,7 @@ class EpisodeConfig:
     clock: dict = field(default_factory=lambda: {"stage_timeout_s": 300})
     tool_output_chars: int = 6000
     expect_replay: bool = False
+    single_tool_calls: bool = False
 
 
 @dataclass
@@ -66,7 +67,7 @@ class Episode:
         self.ctx = Ctx(
             env=self.env, bb=self.bb, log=self.log, clock=self.clock, llm=self.llm, model=c.model,
             temperature=c.temperature, ref_seed=c.ref_seed, branch_seed=c.branch_seed, max_tokens=c.max_tokens,
-            expect_replay=c.expect_replay,
+            expect_replay=c.expect_replay, single_tool_calls=c.single_tool_calls,
         )
         self.inj = Injector(c.spec, self.fault, self.ctx)
         self.artifacts: dict = {}

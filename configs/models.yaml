@@ -8,3 +8,4 @@ llama3.2-3b:
   revision: 006f5dcd1393c3add266de40994ba96225e9689d
   quantization: fp8-runtime
   tool_parser: llama3_json
+  single_tool_calls: true   # chat template rejects several tool calls per turn
