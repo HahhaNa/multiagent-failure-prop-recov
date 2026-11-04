@@ -215,7 +215,7 @@ def main() -> None:
     tools = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
     ext_ok = {n for s in tools.values() for n, v in s.get("write", {}).items() if v.get("external")} | {n for s in tools.values() for n in s.get("read_external", [])}
     d = out_dir(f"tables/{a.exp}")
-    arts.to_csv(d / "cf_artifacts.csv.gz", index=False)
+    arts.to_csv(d / "cf_artifacts.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
     tables = {
         "graph_accuracy": graph_accuracy(arts, []),
         "graph_accuracy_family": graph_accuracy(arts, ["family"]),

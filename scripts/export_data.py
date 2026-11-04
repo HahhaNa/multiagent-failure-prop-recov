@@ -22,7 +22,7 @@ KEEP = ["task", "suite", "mode", "fault", "kind", "point", "family", "ftype", "r
         "duplicate_effects", "residual_harm", "run_dir"]
 EXPS = ["main", "verify", "restart", "main_wide", "verify_wide", "restart_wide", "cross_llama3.2-3b", "verify_llama3.2-3b",
         "restart2_llama3.2-3b", "t0", "cpu_qwen3-4b-cpu", "latency_qwen3-8b", "verify_pilot2", "primary", "pilot2", "screen3"]
-TRACE_FILES = ("events.jsonl", "transcripts.json", "artifacts.json", "graphs.json", "manifest.json", "summary.json")
+TRACE_FILES = ("DONE", "events.jsonl", "transcripts.json", "artifacts.json", "graphs.json", "manifest.json", "summary.json")
 JSON_COLS = ("tainted_stages", "irrev_window", "first_irrev", "overhead", "fault_record", "verify_stages", "duplicate_effects")
 
 
@@ -50,7 +50,7 @@ def main() -> None:
         for c in JSON_COLS:
             if c in df:
                 df[c] = df[c].map(lambda v: json.dumps(v, default=str) if isinstance(v, (dict, list)) else "")
-        df.to_csv(out / f"runs_{exp}.csv.gz", index=False, compression="gzip")
+        df.to_csv(out / f"runs_{exp}.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
         print(exp, len(df), "rows")
         if a.traces:  # one archive per task keeps every file small
             tdir = out / "traces" / exp
