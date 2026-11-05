@@ -13,6 +13,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--round", default="", help="'' (round 1), '2', '3', or 'human' (data/audit/human_labels.csv)")
     args = ap.parse_args()
+    if args.round == "human":  # Amendment 5.1: per-call answers and E1-E3 comparison
+        import audit_human
+
+        audit_human.compare()
+        return
     d = ROOT / "data/audit"
     sample = {x["id"]: x for x in json.loads((d / f"sample{'' if args.round == 'human' else args.round}.json").read_text())} if args.round != "human" else {}
     if args.round == "human":  # human labels for the round-3 sample, filled in data/audit/human_labels.csv

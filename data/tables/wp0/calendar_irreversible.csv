@@ -1,0 +1,14 @@
+family,point,n,old,sim,doc,doc_minus_old
+accidental,E.tool,90,0.0556,0.1111,0.1111,0.0556
+accidental,P.out,115,0.0870,0.3478,0.3478,0.2609
+accidental,P.start,140,0.1500,0.2857,0.2857,0.1357
+accidental,R.out,490,0.1633,0.3531,0.3531,0.1898
+accidental,R.start,140,0.2000,0.2857,0.2857,0.0857
+accidental,R.tool,130,0.1769,0.3846,0.3846,0.2077
+accidental,S.write,55,0.0909,0.3636,0.3636,0.2727
+adversarial,E.tool,140,0.7929,0.7929,0.7929,0.0000
+adversarial,P.out,140,0.9429,0.9429,0.9429,0.0000
+adversarial,R.out,270,0.4704,0.5741,0.5778,0.1074
+adversarial,R.tool,120,0.4500,0.5667,0.5750,0.1250
+adversarial,S.write,70,0.1714,0.1714,0.1714,0.0000
+control,R.out,250,0.0680,0.0920,0.0920,0.0240

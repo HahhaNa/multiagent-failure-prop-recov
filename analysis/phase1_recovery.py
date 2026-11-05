@@ -6,8 +6,15 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yaml
-from common import ROOT, boot_ci, load, out_dir, runs_root, style
+from common import (
+    ROOT,
+    boot_ci,
+    load,
+    out_dir,
+    runs_root,
+    style,
+    with_external,
+)
 
 KEY = ["task", "mode", "fault", "branch_seed"]
 METHODS = ["R0", "R1", "R3"]
@@ -15,16 +22,11 @@ MCOL = {"R0": "#8f8e88", "R1": "#2a78d6", "R3": "#eb6834"}
 STAGES = ["R.tool", "R.start", "R.out", "P.start", "P.out", "S.write", "E.tool"]
 
 
-def external_tools() -> set[str]:
-    t = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
-    return {n for s in t.values() for n, v in s.get("write", {}).items() if v.get("external")} | {n for s in t.values() for n in s.get("read_external", [])}
-
-
 def fault_caused(exp: str) -> pd.DataFrame:
     """Per branch: counterfactual fault-caused irreversible / compensable external effects (from W4 cf_artifacts)."""
     p = ROOT / "data/tables" / exp / "cf_artifacts.csv.gz"
-    a = pd.read_csv(p)
-    a = a[(a.level == "call") & a.ok & a.dependent & a.name.isin(external_tools())]
+    a = with_external(pd.read_csv(p), exp)
+    a = a[(a.level == "call") & a.ok & a.dependent & a.external]
     g = a.groupby(KEY)
     return pd.DataFrame({"fc_irrev": g.apply(lambda x: int((x.rev == "irreversible").sum())), "fc_comp": g.apply(lambda x: int((x.rev == "compensable").sum()))}).reset_index()
 

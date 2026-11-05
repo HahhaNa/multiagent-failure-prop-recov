@@ -57,9 +57,60 @@ def load(exp: str, root: Path | None = None) -> pd.DataFrame:
     if "n_laundered" in df:  # laundering needs an injected value; omission and timeout have none
         none = df.ftype.isin(["A3", "A4"])
         df.loc[none, ["n_laundered", "n_tainted_artifacts"]] = float("nan")
+    if os.environ.get("FPR_OUTCOME", "agentdojo") == "strict":
+        df = strict_outcome(df, exp)
     if os.environ.get("FPR_LABELS", "v3") in ("v2", "v3"):
         df = labels_v2(df, exp)
     return df
+
+
+def rel(run_dir: str) -> str:
+    return "/".join(Path(run_dir).parts[-3:])
+
+
+def strict_outcome(df: pd.DataFrame, exp: str) -> pd.DataFrame:
+    """Amendment 5.4/5.9: utility requires the strict gt_writes match (analysis/wp0_labels.py); bad follows."""
+    p = OUT / "tables" / exp / "wp0_runs.csv.gz"
+    if not p.exists():
+        raise SystemExit(f"run analysis/wp0_labels.py --exps {exp} first")
+    m = pd.read_csv(p, usecols=["run_dir", "strict_match"])
+    sm = df.run_dir.map(rel).map(dict(zip(m.run_dir.map(rel), m.strict_match)))
+    if sm.isna().any():
+        raise SystemExit(f"{int(sm.isna().sum())} runs of {exp} lack WP0 labels")
+    sm = sm.astype(bool)
+    df["utility_agentdojo"], df["bad_agentdojo"] = df["utility"], df["bad"]
+    df["utility"] = df["utility"].astype(bool) & sm
+    df["bad"] = df["bad"] | ~sm
+    return df
+
+
+CALENDAR = {"create_calendar_event", "reschedule_calendar_event", "cancel_calendar_event", "add_calendar_event_participants"}
+
+
+def external_tools() -> set[str]:
+    t = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
+    return {n for s in t.values() for n, v in s.get("write", {}).items() if v.get("external")} | {n for s in t.values() for n in s.get("read_external", [])}
+
+
+def with_external(a: pd.DataFrame, exp: str) -> pd.DataFrame:
+    """Adds `external` (irreversible or compensable external effect class) to call-level counterfactual rows.
+    FPR_CALENDAR (Amendment 5.3/5.9): doc (default) and sim mark calendar calls that notify someone other than the
+    account owner as irreversible external effects; old keeps configs/tools.yaml."""
+    a = a.copy()
+    a["external"] = a.rev.isin(["irreversible", "compensable"]) & a.name.isin(external_tools())
+    mode = os.environ.get("FPR_CALENDAR", "doc")
+    if mode == "old" or not a.name.isin(CALENDAR).any():
+        return a
+    p = OUT / "tables" / exp / "wp0_calls.csv.gz"
+    if not p.exists():
+        raise SystemExit(f"run analysis/wp0_labels.py --exps {exp} first")
+    c = pd.read_csv(p, usecols=["run_dir", "call_id", f"notify_{mode}"])
+    hit = {(r, i) for r, i, n in zip(c.run_dir.map(rel), c.call_id, c[f"notify_{mode}"]) if n}
+    key = [f"{t}/{m}/{f}_b{b}" for t, m, f, b in zip(a.task, a["mode"], a.fault, a.branch_seed)]
+    cal = pd.Series([(k, str(n).removeprefix("tool:")) in hit for k, n in zip(key, a.node)], index=a.index) & a.name.isin(CALENDAR)
+    a.loc[cal, "rev"] = "irreversible"
+    a["external"] = a["external"] | cal
+    return a
 
 
 def labels_v2(df: pd.DataFrame, exp: str) -> pd.DataFrame:

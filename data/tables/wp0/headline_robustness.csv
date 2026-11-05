@@ -1,0 +1,15 @@
+comparison,agentdojo|all,agentdojo|without_fill_rule,strict|all,strict|without_fill_rule,outcome_robust,fill_rule_robust,est agentdojo|all,est agentdojo|without_fill_rule,est strict|all,est strict|without_fill_rule
+"Delta bad, accidental, message",1,1,1,1,True,True,0.4089,0.4516,0.4375,0.4796
+"Delta bad, accidental, state",1,1,1,1,True,True,0.4250,0.5020,0.3083,0.3784
+"Delta bad, adversarial, message",1,1,1,1,True,True,0.6776,0.7127,0.6716,0.7382
+"Delta bad, adversarial, state",1,1,1,1,True,True,0.4840,0.5727,0.3827,0.4818
+"P(prop|dep) adversarial - accidental, message",1,1,1,1,True,True,0.3750,0.3634,0.3502,0.3617
+"P(prop|dep) adversarial - accidental, state",1,1,1,1,True,True,0.1968,0.1903,0.1791,0.1835
+"R1 - R0 utility, accidental",1,1,0,0,False,True,0.2664,0.2892,0.0483,0.0513
+"R1 - R0 residual harm, accidental",0,0,0,0,False,False,0.0000,0.0000,0.0000,0.0000
+"R3 - R0 utility, accidental",0,0,0,0,False,False,0.0439,0.0667,0.0404,0.0792
+"R3 - R0 residual harm, accidental",0,0,0,0,False,False,-0.0263,-0.0219,-0.0263,-0.0219
+"R1 - R0 utility, adversarial",0,0,0,0,False,False,0.0054,-0.0595,-0.0595,-0.0793
+"R1 - R0 residual harm, adversarial",0,0,0,0,False,False,0.0162,0.0033,0.0162,0.0033
+"R3 - R0 utility, adversarial",0,0,1,1,False,False,0.1429,0.1339,0.3320,0.3785
+"R3 - R0 residual harm, adversarial",-1,-1,-1,-1,True,True,-0.3905,-0.3967,-0.3905,-0.3967

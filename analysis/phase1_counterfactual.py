@@ -12,8 +12,16 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yaml
-from common import CATS, CLEAN_FOR, ROOT, boot_ci, load, ordered, out_dir, runs_root
+from common import (
+    CATS,
+    CLEAN_FOR,
+    boot_ci,
+    load,
+    ordered,
+    out_dir,
+    runs_root,
+    with_external,
+)
 
 
 def norm(x):
@@ -175,9 +183,9 @@ def graph_accuracy(a: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def irreversibility(a: pd.DataFrame, df: pd.DataFrame, ext_ok: set[str], keys: list[str]) -> pd.DataFrame:
+def irreversibility(a: pd.DataFrame, df: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
     """Share of injected branches with >= 1 fault-caused irreversible/compensable external effect before recovery."""
-    eff = a[(a.level == "call") & a.ok & a.rev.isin(["irreversible", "compensable"]) & a.name.isin(ext_ok) & a.dependent]
+    eff = a[(a.level == "call") & a.ok & a.external & a.dependent]
     f = df[(df.kind == "fault") & df.injected]
     bk = ["task", "mode", "fault", "branch_seed"]
     firsts = eff.sort_values("steps").groupby(bk).first()
@@ -230,8 +238,7 @@ def main() -> None:
     with Pool(a.workers) as p:
         ext = {x["run_dir"]: x for x in p.map(extract, need, chunksize=16)}
     arts = artifact_rows(df, ext)
-    tools = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
-    ext_ok = {n for s in tools.values() for n, v in s.get("write", {}).items() if v.get("external")} | {n for s in tools.values() for n in s.get("read_external", [])}
+    arts_x = with_external(arts, a.exp)
     d = out_dir(f"tables/{a.exp}")
     arts.to_csv(d / "cf_artifacts.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
     omissions(df, ext).to_csv(d / "cf_omissions.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
@@ -240,8 +247,8 @@ def main() -> None:
         "graph_accuracy_family": graph_accuracy(arts, ["family"]),
         "graph_accuracy_family_point_mode": graph_accuracy(arts, ["family", "point", "mode"]),
         "graph_accuracy_level": graph_accuracy(arts, ["family", "level"]),
-        "irreversible_before_recovery": irreversibility(arts, df, ext_ok, ["fault", "mode"]),
-        "irreversible_by_stage": irreversibility(arts, df, ext_ok, ["family", "point", "mode"]),
+        "irreversible_before_recovery": irreversibility(arts_x, df, ["fault", "mode"]),
+        "irreversible_by_stage": irreversibility(arts_x, df, ["family", "point", "mode"]),
         "ignored_robust": ignored_robust(df),
     }
     for name, t in tables.items():

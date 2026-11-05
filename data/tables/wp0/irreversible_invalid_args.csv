@@ -1,0 +1,14 @@
+family,point,n,share_fault_caused_all,share_fault_caused_valid_args_only
+accidental,E.tool,90,0.1111,0.1111
+accidental,P.out,115,0.3478,0.3478
+accidental,P.start,140,0.2857,0.2857
+accidental,R.out,490,0.3531,0.3490
+accidental,R.start,140,0.2857,0.2857
+accidental,R.tool,130,0.3846,0.3846
+accidental,S.write,55,0.3636,0.3636
+adversarial,E.tool,140,0.7929,0.7929
+adversarial,P.out,140,0.9429,0.9429
+adversarial,R.out,270,0.5778,0.5778
+adversarial,R.tool,120,0.5750,0.5750
+adversarial,S.write,70,0.1714,0.1714
+control,R.out,250,0.0920,0.0920

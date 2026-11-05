@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-from common import CLEAN_FOR, ROOT, boot_ci, load, out_dir, runs_root
+from common import CLEAN_FOR, ROOT, boot_ci, load, out_dir, runs_root, with_external
 from phase1_counterfactual import closure, norm, origins
 
 FREE = {"subject", "body", "content", "text", "message", "description", "title", "notes"}
@@ -116,7 +116,7 @@ def artifact_matches(df: pd.DataFrame, ext: dict, samples: dict) -> pd.DataFrame
                 rows.append({"task": r.task, "mode": r["mode"], "fault": r.fault, "family": r.family, "point": r.point, "level": kind[:-1],
                              "n_clean": len(runs), "declared": a["node"] in dec, "dataflow": a["node"] in flow, "taint": a["node"] in taint,
                              "declared_taint": a["node"] in dec or a["node"] in taint, **{f"match_{d}": m[d] for d in DEFS},
-                             "branch_seed": r.branch_seed, "name": a.get("name"), "rev": a.get("rev"), "ok": a.get("ok", True)})
+                             "branch_seed": r.branch_seed, "node": a["node"], "name": a.get("name"), "rev": a.get("rev"), "ok": a.get("ok", True)})
     return pd.DataFrame(rows)
 
 
@@ -163,13 +163,12 @@ def v2(a: pd.DataFrame, kmax: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def v7_irreversible(a: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
+def v7_irreversible(a: pd.DataFrame, df: pd.DataFrame, exp: str) -> pd.DataFrame:
     """Amendment 3 (post-hoc): share of injected branches with >= 1 fault-caused irreversible/compensable external
     effect under E1-E3, per family and point (k=5)."""
-    tools = yaml.safe_load((ROOT / "configs/tools.yaml").read_text())
-    ext = {n for s in tools.values() for n, v in s.get("write", {}).items() if v.get("external")} | {n for s in tools.values() for n in s.get("read_external", [])}
     key = ["task", "mode", "fault", "branch_seed"]
-    c = a[(a.level == "call") & a.ok & a.rev.isin(["irreversible", "compensable"]) & a.name.isin(ext)]
+    c = with_external(a[a.level == "call"], exp)
+    c = c[c.ok & c.external]
     f = df[(df.kind == "fault") & df.injected & df.family.isin(["accidental", "adversarial"])]
     rows = []
     for d in DEFS:
@@ -210,7 +209,7 @@ def main() -> None:
         ext = {x["run_dir"]: x for x in p.map(extract, df[df.kind.isin(["fault", "clean", "ref"])].run_dir.tolist(), chunksize=16)}
     arts = artifact_matches(df, ext, clean_samples(df))
     d = out_dir(f"tables/validation_{a.exp}")
-    t1, t2, t5, t7 = v1(arts, 5), v2(arts, kmax), v5(), v7_irreversible(arts, df)
+    t1, t2, t5, t7 = v1(arts, 5), v2(arts, kmax), v5(), v7_irreversible(arts, df, a.exp)
     for name, t in (("v1_equivalence", t1), ("v2_k_sensitivity", t2), ("v5_task_selection", t5), ("v7_irreversible_by_definition_posthoc", t7)):
         t.to_csv(d / f"{name}.csv", index=False, float_format="%.4f")
         (d / f"{name}.md").write_text(t.to_markdown(index=False, floatfmt=".3f"))
