@@ -100,6 +100,12 @@ class Ctx:
         return resp
 
 
+def policy_suffix(ctx: Ctx) -> str:
+    """Domain policy of the benchmark, if it has one (tau2); appended to planner and executor system prompts."""
+    p = getattr(ctx.env, "policy", "")
+    return f"\n\nDomain policy. Follow it; do not plan or take an action it forbids.\n{p}" if p else ""
+
+
 def assistant_msg(resp: ChatResponse) -> dict:
     m: dict[str, Any] = {"role": "assistant", "content": resp.content or ""}
     if resp.tool_calls:

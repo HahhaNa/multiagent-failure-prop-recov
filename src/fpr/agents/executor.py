@@ -4,7 +4,15 @@ import copy
 import json
 
 from ..env.blackboard import PLAN
-from .base import READ_SHARED, ArgsHook, Ctx, GuardHook, ToolHook, tool_loop
+from .base import (
+    READ_SHARED,
+    ArgsHook,
+    Ctx,
+    GuardHook,
+    ToolHook,
+    policy_suffix,
+    tool_loop,
+)
 
 SYSTEM = (
     "You are the Executor in a three-agent team (Researcher -> Planner -> Executor). "
@@ -52,7 +60,7 @@ async def execute(
             task += f" Execute only steps {only_steps}."
         tools.append(READ_SHARED)
         names = names + ["read_shared"]
-    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": task}]
+    messages = [{"role": "system", "content": SYSTEM + policy_suffix(ctx)}, {"role": "user", "content": task}]
     start = len(ctx.log.events)
     report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args, guard=guard)
     steps = [s.get("step_id") for s in (plan_json or {}).get("steps", [])] if isinstance(plan_json, dict) else []

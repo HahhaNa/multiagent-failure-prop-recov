@@ -1,0 +1,47 @@
+tau2_retail:
+  tasks: 114
+  with_action_calls: 107
+  gold_replay_passes: 107
+  with_critical_fact: 103
+  dropped:
+    '10': no_critical_fact
+    '12': no_critical_fact
+    '24': no_action
+    '25': no_action
+    '50': no_critical_fact
+    '57': no_action
+    '62': no_action
+    '65': no_action
+    '67': no_action
+    '68': no_action
+    '105': no_critical_fact
+tau2_airline:
+  tasks: 50
+  with_action_calls: 27
+  gold_replay_passes: 27
+  with_critical_fact: 26
+  dropped:
+    '0': no_action
+    '1': no_action
+    '2': no_action
+    '3': no_action
+    '4': no_action
+    '5': no_action
+    '6': no_action
+    '9': no_action
+    '10': no_action
+    '13': no_critical_fact
+    '26': no_action
+    '27': no_action
+    '28': no_action
+    '31': no_action
+    '34': no_action
+    '36': no_action
+    '38': no_action
+    '41': no_action
+    '43': no_action
+    '45': no_action
+    '46': no_action
+    '47': no_action
+    '48': no_action
+    '49': no_action

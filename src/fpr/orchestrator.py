@@ -12,10 +12,10 @@ from .agents.planner import plan as make_plan
 from .agents.researcher import research
 from .agents.schemas import UNAVAILABLE
 from .agents.verifier import evidence, guard, verify_findings, verify_plan
-from .env.agentdojo_adapter import TaskEnv
 from .env.blackboard import FINDINGS, PLAN, Blackboard
 from .env.clock import VirtualClock
 from .env.external_world import ExternalWorld
+from .env.registry import make_env
 from .env.snapshots import dump
 from .env.state_store import StateStore
 from .faults.injectors import Injector, as_json
@@ -68,7 +68,7 @@ class Episode:
         inj_env = {}
         if self.fault and self.fault.type == "B1" and self.fault.point == "R.tool":
             inj_env = {v: injection_text(c.spec.injection_goal) for v in c.spec.vectors}
-        self.env = TaskEnv(c.version, c.spec.suite, c.spec.task_id, self.store, self.world, c.tool_output_chars, inj_env)
+        self.env = make_env(c.version, c.spec.suite, c.spec.task_id, self.store, self.world, c.tool_output_chars, inj_env)
         self.bb = Blackboard(self.store)
         self.ctx = Ctx(
             env=self.env, bb=self.bb, log=self.log, clock=self.clock, llm=self.llm, model=c.model,

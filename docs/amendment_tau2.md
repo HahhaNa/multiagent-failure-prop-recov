@@ -92,3 +92,28 @@ to the result of the first successful tool call of the episode (the researcher's
 - If the gate passes, `tau2_main` uses all candidate tasks; the >= 0.5 subset is the sensitivity set (design §7.2).
 - Harness changes after the first screening run (prompt template, limits, tool exposure) are allowed only as a
   dated addition to this file, and the earlier screening is kept and reported.
+
+## Addition 1 (2026-11-18, before any model run; after reading the annotation of two tasks, retail 1 and airline 8)
+
+The pool of T3 mixed value kinds: a payment method id was replaced by a user id, and a flight type by a payment
+source, because the Phase 1 pool only matches the string shape. Fixed rule from here on: the pool of plausible
+replacement values is the set of other values that occur under the same field names as the true value, taken
+(1) from the outputs of the task's gold read calls, else (2) from the whole database, else (3) the Phase 1
+shape-matched pool over the gold read outputs. Criteria (a)–(c) of T3 are unchanged. No episode had been run.
+Refinement written the same day, still before any model run (seen on the same two tasks: `insurance` "no" was
+replaced by a membership level). Final order of pools, first non-empty one wins: (1) other values of the field
+named like the argument, in the gold read outputs; (2) other values of the fields in which the true value occurs
+in the gold read outputs, kept only if the argument's own field takes them somewhere in the database; (3) other
+values of the argument's own field in the whole database; (4) other values of the fields in which the true value
+occurs in the whole database; (5) the Phase 1 shape-matched pool over the gold read outputs. (1)–(3) apply only
+when the argument's name is a database field that holds the true value.
+
+## Addition 2 (2026-11-18, before any model run; from the tool schemas only)
+
+The planner's action catalog shows one line per tool (name, top-level argument types, first description line),
+so nested arguments (`flights`, `passengers`, `payment_methods`) and enumerations (`cabin`, `insurance`,
+`flight_type`) would be invisible to the planner. The adapter appends "Argument formats: ..." (enum values and the
+field names of nested objects, taken from the tool's own JSON schema) to the first line of the tool description.
+The same description is used for every agent. No agent prompt or shared harness code is changed for this.
+Also fixed here: the Phase 1 implausible perturbation of a number (×100) leaves 0 unchanged; for τ² specs an
+unchanged numeric value is replaced by 9999.

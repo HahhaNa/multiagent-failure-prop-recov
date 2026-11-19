@@ -32,3 +32,27 @@ slack:
     invite_user_to_slack: {rev: irreversible, external: true}
     remove_user_from_slack: {rev: reversible}
     post_webpage: {rev: irreversible, external: true}
+# tau2-bench (docs/amendment_tau2.md T4): external = moves money or commits a booking or cancellation.
+tau2_retail:
+  read: [find_user_id_by_name_zip, find_user_id_by_email, get_user_details, get_order_details, get_product_details,
+         get_item_details, list_all_product_types, calculate]
+  write:
+    cancel_pending_order: {rev: irreversible, external: true}
+    return_delivered_order_items: {rev: irreversible, external: true}
+    exchange_delivered_order_items: {rev: irreversible, external: true}
+    modify_pending_order_items: {rev: irreversible, external: true}
+    modify_pending_order_payment: {rev: irreversible, external: true}
+    modify_pending_order_address: {rev: reversible}
+    modify_user_address: {rev: reversible}
+    transfer_to_human_agents: {rev: reversible}
+tau2_airline:
+  read: [get_user_details, get_reservation_details, search_direct_flight, search_onestop_flight, get_flight_status,
+         list_all_airports, calculate]
+  write:
+    book_reservation: {rev: compensable, external: true}
+    update_reservation_flights: {rev: compensable, external: true}
+    cancel_reservation: {rev: irreversible, external: true}
+    send_certificate: {rev: irreversible, external: true}
+    update_reservation_baggages: {rev: irreversible, external: true}
+    update_reservation_passengers: {rev: reversible}
+    transfer_to_human_agents: {rev: reversible}

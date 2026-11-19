@@ -20,6 +20,7 @@ from pathlib import Path
 import yaml
 
 from .env.agentdojo_adapter import ROOT
+from .env.tau2_adapter import TAU2_COMMIT
 from .faults.spec import FaultSpec, clean_point, conditions
 from .llm.cache import CachedLLM, DiskCache
 from .llm.client import OpenAIClient
@@ -84,6 +85,7 @@ def base_manifest(cfg: dict, model_alias: str) -> dict:
         "vllm_version": md.version("vllm"),
         "agentdojo_version": md.version("agentdojo"),
         "benchmark_version": cfg["benchmark_version"],
+        "tau2_commit": TAU2_COMMIT,
         "driver_version": _sh("nvidia-smi --query-gpu=driver_version --format=csv,noheader"),
         "cuda_version": _sh("nvidia-smi | grep -o 'CUDA Version: [0-9.]*' | cut -d' ' -f3"),
         "serve_command": serve.read_text().strip() if serve.exists() else None,
@@ -292,6 +294,8 @@ def main() -> None:
     ap.add_argument("--exp", default="")
     ap.add_argument("--concurrency", type=int, default=0)
     ap.add_argument("--task-set", default="selected", choices=["selected", "wide"])
+    ap.add_argument("--tasks", default="configs/tasks_candidates.yaml", help="task specs, relative to the repo root")
+    ap.add_argument("--selected", default="configs/tasks_selected.yaml", help="selection file, relative to the repo root")
     ap.add_argument("--src", default="main", help="restart: faulted experiment to recover")
     ap.add_argument("--prefix-seed", type=int, default=1, help="prefix: reference seed whose prefix the branches replay")
     a = ap.parse_args()
@@ -299,8 +303,8 @@ def main() -> None:
     root = runs_root(cfg)
     if a.mock:
         root = root / "mock"
-    specs = load_specs(ROOT / "configs/tasks_candidates.yaml")
-    sel_path = root / "tasks_selected.yaml" if a.mock else ROOT / "configs/tasks_selected.yaml"
+    specs = load_specs(ROOT / a.tasks)
+    sel_path = root / Path(a.selected).name if a.mock else ROOT / a.selected
     modes = a.modes.split(",") if a.modes else cfg["modes"]
 
     if a.stage == "select":
@@ -324,6 +328,8 @@ def main() -> None:
         runs = expand(a.exp or "screen", list(specs), modes, [0], [], [], [])
     elif a.stage == "screen_all":
         runs = expand(a.exp or "screen", list(specs), modes, [1, 2], [], [], [])
+    elif a.stage == "screen2":  # every candidate x modes x reference seeds 0-1 (new-benchmark gate)
+        runs = expand(a.exp or "screen", list(specs), modes, [0, 1], [], [], [])
     elif a.stage == "screen1":
         rows = summaries(root, a.exp or "screen")
         passed = sorted({s["task"] for s in rows if s["ref_seed"] == 0 and s["utility"]})

@@ -5,7 +5,7 @@ import json
 from pydantic import ValidationError
 
 from ..env.blackboard import FINDINGS
-from .base import READ_SHARED, Ctx, tool_loop
+from .base import READ_SHARED, Ctx, policy_suffix, tool_loop
 from .schemas import Plan, json_schema_format
 
 SYSTEM = (
@@ -48,7 +48,7 @@ async def plan(
             "\n\nPartial replanning. Keep these steps unchanged:\n" + json.dumps(keep_steps, indent=1)
             + f"\nClaims {invalid_claims} were invalid and have been corrected. Regenerate only the steps that depend on them."
         )
-    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": task}]
+    messages = [{"role": "system", "content": SYSTEM + policy_suffix(ctx)}, {"role": "user", "content": task}]
     if mode == "state":
         _, messages = await tool_loop(ctx, "planner", messages, [READ_SHARED], ["read_shared"], max_turns)
     messages.append({"role": "user", "content": "Output the plan as JSON."})
