@@ -19,6 +19,17 @@ SYSTEM = (
 )
 
 
+OUTPUT = "Output the plan as JSON."
+FINDINGS_MARK = "\n\nResearcher findings (JSON):\n"
+
+
+def plan_format(env) -> dict:
+    fmt = json_schema_format(Plan, "plan")
+    step = fmt["json_schema"]["schema"]["$defs"]["PlanStep"]["properties"]
+    step["action"] = {"type": "string", "enum": sorted(env.write_labels)}
+    return fmt
+
+
 def action_catalog(ctx: Ctx) -> str:
     lines = []
     for t in ctx.env.tool_schemas(list(ctx.env.write_labels)):
@@ -40,7 +51,7 @@ async def plan(
     """keep_steps / invalid_claims enable partial replanning (Phase 2)."""
     task = f"User task: {ctx.env.prompt}\n\nAction tools available to the Executor:\n{action_catalog(ctx)}"
     if mode == "message":
-        task += "\n\nResearcher findings (JSON):\n" + json.dumps(findings_json, indent=1)
+        task += FINDINGS_MARK + json.dumps(findings_json, indent=1)
     else:
         task += f"\n\nThe Researcher's findings are in the shared file {FINDINGS}. Read it with read_shared before planning."
     if keep_steps is not None:
@@ -51,11 +62,8 @@ async def plan(
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": task}]
     if mode == "state":
         _, messages = await tool_loop(ctx, "planner", messages, [READ_SHARED], ["read_shared"], max_turns)
-    messages.append({"role": "user", "content": "Output the plan as JSON."})
-    fmt = json_schema_format(Plan, "plan")
-    step = fmt["json_schema"]["schema"]["$defs"]["PlanStep"]["properties"]
-    step["action"] = {"type": "string", "enum": sorted(ctx.env.write_labels)}
-    resp = await ctx.chat("planner", messages, response_format=fmt)
+    messages.append({"role": "user", "content": OUTPUT})
+    resp = await ctx.chat("planner", messages, response_format=plan_format(ctx.env))
     try:
         return Plan.model_validate_json(resp.content or "{}")
     except ValidationError as e:

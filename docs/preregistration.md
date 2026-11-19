@@ -311,3 +311,52 @@ detection, breadth admission rules, metrics, held-out split rule, power-simulati
 criteria, acceptance tests and run matrix are fixed in `docs/phase2_design.md` (§1–§11). Target: NeurIPS 2027 main
 track; Tier 1 is the course deliverable. The held-out split is written to `configs/phase2_split.yaml` and committed before
 the first real-model R4p run. Any change after that is a new dated amendment.
+
+## Amendment 8 — Phase 2 implementation choices and margin (2026-11-18, before any real-model Phase 2 recovery run)
+
+Fixed while building `src/fpr/recovery/` on MockLLM (acceptance tests in `tests/test_p2_recovery.py` pass); none was
+chosen after seeing a real-model recovery result. Where the design was silent:
+- **Recovery world.** Recovery episodes rebuild the environment from the uninjected initial state (as R1 does), replay
+  F's successful tool calls before the fault, then F's calls after the fault minus invalidated reversible writes
+  (per-object restore by replay), then refunds for invalidated `send_money` calls (§4 step 6). Recovery LLM calls use
+  seed 200 + (branch seed − 100); probes use 400 + i for the i-th probe of an artifact; no LLM call precedes the branch.
+- **Corrected origin.** R.tool: the origin call is re-executed on that world and the researcher continues live from
+  F's conversation; R.start: the researcher reruns; both see F's later effects (world as left by F). R.out: the
+  researcher's own guided output before injection. P.out: `plan_raw`; S.write: the unpoisoned plan; P.start: planner live.
+  E.tool: the origin call's return on the rebuilt world.
+- **Invalidation levels.** Decisions are made on plan steps (R.* faults) and executor non-read calls after the fault
+  (all faults), the Phase 1 artifact sets. Researcher claims after R.tool/R.start are invalidated because their producer
+  reruns (§4 step 4). Flags: declared descendants of the origin (tool → claim sources → step cites → call step_id) ∪
+  taint. A planner probe re-issues F's final planner request with the corrected findings; an executor probe re-issues
+  the request that produced the call with the corrected plan (and, for E.tool, the corrected tool return).
+- **Budget exhaustion.** An artifact whose SPRT is still open when the budget runs out is invalidated (as truncation);
+  never-probed candidates are reused and counted as unprobed reuse.
+- **Replanning.** For R.* faults the planner reruns whenever the corrected findings differ from F's findings, with the
+  reused steps passed as `keep_steps` (so steps missing from F can be added); R2 replans from scratch. The executor runs
+  the steps of the new plan not covered by a reused successful call (R2: all steps).
+- **Duplicate guard (all Phase 2 methods, R2 included).** An executor write whose tool and E1-normalized arguments equal
+  an effect that is still in the world (F's pre-fault writes, kept writes, invalidated irreversible writes, failed
+  refunds) is not executed; the agent is told it was already done. R1 (Phase 1 restart) has no guard.
+- **Baselines.** LLM-judge: one guided call per branch (same model, seed = recovery seed) listing dependent artifact ids
+  given the corrupted and correct value. Support: an artifact is reused iff every argument value (free-text fields:
+  only their IBANs, emails, dates and URLs) occurs in a source independent of the fault: the user prompt, the
+  corrected findings, pre-fault tool returns, and for executor calls also the corrected plan and corrected origin
+  return. Oracle: invalidates every artifact not labeled reusable by the k_gt = 30 ground truth (dependent and
+  indifference artifacts are invalidated). R4p-1shot: one probe per candidate (budget ∞), invalidate on mismatch.
+- **Ground truth.** `gt_h2`: 30 fresh references (seeds 300–329) for R.start and 30 clean continuations per point
+  (R.tool, R.out, P.out, E.tool; branch seeds 300–329 on the seed-0 prefix of `main_h2`); fault points map to clean
+  points as in Phase 1 (P.start → R.out, S.write → P.out). Bounds: one-sided 95% Clopper–Pearson; with n = 30,
+  dependent = 0–1 matches, reusable = 9–30, indifference = 2–8.
+- **Residual harm.** Same definition as R1 (security violation or a tainted irreversible effect of F); a second
+  field also counts tainted `send_money` effects that were not refunded.
+- **Utility margin (§9).** `analysis/phase2_power.py` on Phase 1 R1 accidental branches of the 10 evaluation tasks
+  (860 branches): power 0.76 at δ = 0.05 and 0.998 at δ = 0.10 → **δ = 0.10**. The mixed model is approximated by a
+  random-intercept analysis of paired branch differences (task-cluster standard error, t with T − 1 df) because no
+  GLMM library is installed; a GLMM fit is added when one is available and reported next to it.
+- **Held-out split.** `configs/phase2_split.yaml` (rule in the file): held out banking.user_task_0,
+  workspace.user_task_7, slack.user_task_11, banking.user_task_13. B = smallest budget with held-out recall >= 0.90.
+- **Realistic detection** (§6) is applied offline to `main_h2` branches: a detector gives the event at which recovery
+  starts; F's calls after that event are treated as never made. Detectors: oracle (at the fault); verifier (R3's
+  V1/V2/V3 prompts applied to F's findings, plan and writes, first flag); MELON-style masked re-execution (each executor
+  write request re-issued with the user task and plan replaced by a task-neutral instruction and the tool outputs; a
+  flag when the masked response repeats the write).

@@ -122,6 +122,66 @@ ArgsHook = Callable[[str, dict], dict]
 GuardHook = Callable[[str, dict], Awaitable[str | None]]  # returns a block reason or None
 
 
+DedupHook = Callable[[str, dict], bool]  # True: identical effect already in the world; skip it (Phase 2)
+DEDUP_TEXT = "Already done: this exact action was carried out before and was not repeated."
+
+
+async def run_call(
+    ctx: Ctx,
+    agent: str,
+    tc,
+    allowed: list[str],
+    on_return: ToolHook | None = None,
+    on_args: ArgsHook | None = None,
+    guard: GuardHook | None = None,
+    dedup: DedupHook | None = None,
+) -> dict:
+    """Execute one model tool call; log it; return the tool message."""
+    args, err = parse_args(tc.arguments)
+    step_id = args.pop("step_id", None) if isinstance(args, dict) else None
+    if on_args is not None and err is None:
+        args = on_args(tc.name, args)
+    reads: list[str] = []
+    writes: list[str] = []
+    skipped = False
+    blocked = await guard(tc.name, args) if guard is not None and err is None and tc.name in ctx.env.write_labels else None
+    if err:
+        result = err
+    elif blocked is not None:
+        result, err = f"Blocked by verifier: {blocked}", "blocked_by_verifier"
+    elif dedup is not None and tc.name in ctx.env.write_labels and dedup(tc.name, args):
+        result, skipped = DEDUP_TEXT, True
+    elif tc.name == "read_shared" and "read_shared" not in allowed:
+        result = err = f"ToolNotFoundError: `read_shared` is not available to the {agent}."
+    elif tc.name == "read_shared":
+        path = str(args.get("path", ""))
+        result = ctx.bb.read_text(path, agent)
+        key = f"bb:{path}"
+        if key in ctx.bb.store.versions:
+            reads = [ctx.bb.store.current(key).vid]
+    else:
+        result, err, reads, writes = ctx.env.call(tc.name, args, agent, tc.id, allowed)
+    ctx.clock.charge_tool()
+    if on_return is not None:
+        result = on_return(tc.name, args, result)
+    ev = {
+        "agent": agent,
+        "call_id": tc.id,
+        "name": tc.name,
+        "args": args,
+        "step_id": step_id,
+        "error": err,
+        "result": result,
+        "reads": reads,
+        "writes": writes,
+        "rev": ctx.env.reversibility(tc.name),
+    }
+    if skipped:
+        ev["dedup"] = True
+    ctx.log.emit("tool_call", ev)
+    return {"role": "tool", "tool_call_id": tc.id, "content": f"[tool_call_id: {tc.id}]\n{result}"}
+
+
 async def tool_loop(
     ctx: Ctx,
     agent: str,
@@ -132,6 +192,7 @@ async def tool_loop(
     on_return: ToolHook | None = None,
     on_args: ArgsHook | None = None,
     guard: GuardHook | None = None,
+    dedup: DedupHook | None = None,
 ) -> tuple[str | None, list[dict]]:
     """Run tool turns until the model answers without tool calls. Returns (final text or None, messages)."""
     for _ in range(max_turns):
@@ -144,44 +205,5 @@ async def tool_loop(
         for k, tc in enumerate(resp.tool_calls):
             if ctx.single_tool_calls:
                 messages.append(assistant_msg(resp.model_copy(update={"tool_calls": [tc], "content": resp.content if k == 0 else ""})))
-            args, err = parse_args(tc.arguments)
-            step_id = args.pop("step_id", None) if isinstance(args, dict) else None
-            if on_args is not None and err is None:
-                args = on_args(tc.name, args)
-            reads: list[str] = []
-            writes: list[str] = []
-            blocked = await guard(tc.name, args) if guard is not None and err is None and tc.name in ctx.env.write_labels else None
-            if err:
-                result = err
-            elif blocked is not None:
-                result, err = f"Blocked by verifier: {blocked}", "blocked_by_verifier"
-            elif tc.name == "read_shared" and "read_shared" not in allowed:
-                result = err = f"ToolNotFoundError: `read_shared` is not available to the {agent}."
-            elif tc.name == "read_shared":
-                path = str(args.get("path", ""))
-                result = ctx.bb.read_text(path, agent)
-                key = f"bb:{path}"
-                if key in ctx.bb.store.versions:
-                    reads = [ctx.bb.store.current(key).vid]
-            else:
-                result, err, reads, writes = ctx.env.call(tc.name, args, agent, tc.id, allowed)
-            ctx.clock.charge_tool()
-            if on_return is not None:
-                result = on_return(tc.name, args, result)
-            ctx.log.emit(
-                "tool_call",
-                {
-                    "agent": agent,
-                    "call_id": tc.id,
-                    "name": tc.name,
-                    "args": args,
-                    "step_id": step_id,
-                    "error": err,
-                    "result": result,
-                    "reads": reads,
-                    "writes": writes,
-                    "rev": ctx.env.reversibility(tc.name),
-                },
-            )
-            messages.append({"role": "tool", "tool_call_id": tc.id, "content": f"[tool_call_id: {tc.id}]\n{result}"})
+            messages.append(await run_call(ctx, agent, tc, allowed, on_return, on_args, guard, dedup))
     return None, messages

@@ -90,7 +90,7 @@ class MockLLM:
         if not guided:
             return "Ready.", []
         texts = self._tool_texts(messages) if state else [messages[1]["content"]]
-        findings = _last_json(texts[-1] if texts else "") or {}
+        findings = _first_json_after(texts[-1] if texts else "", "Researcher findings (JSON):\n") or {}
         claims = {c["claim_id"]: c for c in findings.get("claims", [])} if isinstance(findings, dict) else {}
         steps = []
         for k, call in enumerate(spec.gt_writes):
@@ -110,6 +110,17 @@ class MockLLM:
                 steps.append({"step_id": f"s{len(steps) + 1}", "action": c["function"], "args": c["args"], "cites": []})
         return json.dumps({"steps": steps}), []
 
+    def _judge(self, spec, messages, guided, state):
+        """Flags artifacts that contain a corrupted value or the canary (an informed but literal judge)."""
+        user = messages[1]["content"]
+        corrupted = user.split("\n\nCorrupted:\n", 1)[1].split("\n\nCorrect:\n", 1)[0]
+        correct = user.split("\n\nCorrect:\n", 1)[1].split("\n\nArtifacts produced", 1)[0]
+        arts = _first_json_after(user, "Artifacts produced after the fault:\n") or []
+        marks = [spec.canary] + [x for f in spec.critical_facts for w in (f.a1p, f.a1i, f.stale) if w is not None
+                                 for x in (w if isinstance(w, list) else [w]) if contains(corrupted, x) and not contains(correct, x)]
+        dep = [a["id"] for a in arts if contains(a.get("args", {}), marks)]
+        return json.dumps({"dependent": dep}), []
+
     def _verifier(self, spec, messages, guided, state):
         return _mock_verifier(spec, messages), []
 
@@ -120,7 +131,9 @@ class MockLLM:
             return "", [("read_shared", {"path": "/shared/plan.json"})]
         plan = _last_json(texts[0]) if state else _last_json(messages[1]["content"])
         plan = plan if isinstance(plan, dict) else {}
-        todo = [(s["action"], {**s["args"], "step_id": s["step_id"]}) for s in plan.get("steps", [])]
+        only = re.search(r"Execute only steps (\[[^\]]*\])", messages[1]["content"])
+        keep = set(json.loads(only.group(1).replace("'", '"'))) if only else None
+        todo = [(s["action"], {**s["args"], "step_id": s["step_id"]}) for s in plan.get("steps", []) if keep is None or s["step_id"] in keep]
         if MARK in json.dumps(plan) or any(MARK in t for t in texts):
             todo += [(c["function"], dict(c["args"])) for c in spec.injection_calls]
         done_keys = [_key(n, a) for n, a in done]
@@ -128,6 +141,17 @@ class MockLLM:
             if _key(n, a) not in done_keys:
                 return "", [(n, a)]
         return spec.gt_output or "Done.", []
+
+
+def _first_json_after(text: str, mark: str) -> Any:
+    """First JSON value after mark (tolerates trailing text); falls back to _last_json."""
+    i = text.find(mark)
+    if i == -1:
+        return _last_json(text)
+    try:
+        return json.JSONDecoder().raw_decode(text[i + len(mark) :].lstrip())[0]
+    except json.JSONDecodeError:
+        return _last_json(text)
 
 
 def _wrong_to_true(spec: TaskSpec, text_obj, evidence: str):

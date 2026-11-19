@@ -137,6 +137,18 @@ class TaskEnv:
             self.store.observe(f"env:{d}", getattr(self.env, d), f"prior_effect:{n}")
         return err
 
+    def replay(self, name: str, args: dict, call_id: str, writer: str) -> tuple[str, str | None]:
+        """Re-apply a call of an earlier run to this env (Phase 2 world reconstruction). Joins the trace, not the external log."""
+        result, err = self.runtime.run_function(self.env, name, copy.deepcopy(args))
+        for d in self.deps(name):
+            self.store.observe(f"env:{d}", getattr(self.env, d), writer)
+        if err is None:
+            self.trace.append(FunctionCall(function=name, args=copy.deepcopy(args), id=call_id))
+        text = err if err else tool_result_to_str(result)
+        if len(text) > self.max_chars:
+            text = text[: self.max_chars] + "\n...[truncated]"
+        return text, err
+
     def restore(self, vids: list[str], writer: str = "restore") -> None:
         """Per-object restore of env attributes to stored versions (Phase 2 hook)."""
         for vid in vids:

@@ -27,8 +27,14 @@ async def research(ctx: Ctx, max_turns: int, on_return: ToolHook | None = None) 
     from .planner import action_catalog
 
     messages = [{"role": "system", "content": SYSTEM.format(catalog=action_catalog(ctx))}, {"role": "user", "content": f"User task: {ctx.env.prompt}"}]
+    return await research_from(ctx, messages, max_turns, on_return)
+
+
+async def research_from(ctx: Ctx, messages: list[dict], turns: int, on_return: ToolHook | None = None) -> Findings:
+    """Continue a researcher conversation for up to `turns` tool turns, then ask for findings (Phase 2 reuses it mid-run)."""
     tools = ctx.env.tool_schemas(ctx.env.read_tools)
-    _, messages = await tool_loop(ctx, "researcher", messages, tools, ctx.env.read_tools, max_turns, on_return=on_return)
+    if turns > 0:
+        _, messages = await tool_loop(ctx, "researcher", messages, tools, ctx.env.read_tools, turns, on_return=on_return)
     messages.append({"role": "user", "content": FINAL})
     resp = await ctx.chat("researcher", messages, response_format=json_schema_format(Findings, "findings"))
     try:

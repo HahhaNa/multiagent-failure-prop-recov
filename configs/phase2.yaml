@@ -1,0 +1,8 @@
+# Phase 2 selective recovery (docs/phase2_design.md). Seeds: recovery 200+, ground truth 300-329, probes 400+.
+src: main_h2            # faulted runs F (R0)
+gt_exp: gt_h2           # k_gt clean continuations / references
+gt_seeds: [300, 330]    # range(start, stop)
+recovery_seed0: 200
+probe_seed0: 400
+sprt: {tau0: 0.05, tau1: 0.30, alpha: 0.05, beta: 0.20, n_max: 8}
+budgets: [0, 4, 8, 16, 32, inf]

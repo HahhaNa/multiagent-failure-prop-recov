@@ -4,7 +4,7 @@ import copy
 import json
 
 from ..env.blackboard import PLAN
-from .base import READ_SHARED, ArgsHook, Ctx, GuardHook, ToolHook, tool_loop
+from .base import READ_SHARED, ArgsHook, Ctx, DedupHook, GuardHook, ToolHook, tool_loop
 
 SYSTEM = (
     "You are the Executor in a three-agent team (Researcher -> Planner -> Executor). "
@@ -15,8 +15,18 @@ SYSTEM = (
 )
 
 
+PLAN_MARK = "\n\nPlan (JSON):\n"
 NUDGES = 2
 NUDGE = "Plan steps {pending} have not been executed successfully yet. Execute them now with tool calls (pass step_id), or explain why a step is impossible."
+
+
+def executor_tools(env, mode: str) -> tuple[list[dict], list[str]]:
+    names = env.read_tools + list(env.write_labels)
+    tools = with_step_id(env.tool_schemas(names))
+    if mode == "state":
+        tools.append(READ_SHARED)
+        names = names + ["read_shared"]
+    return tools, names
 
 
 def with_step_id(schemas: list[dict]) -> list[dict]:
@@ -36,6 +46,7 @@ async def execute(
     on_args: ArgsHook | None = None,
     only_steps: list[str] | None = None,
     guard: GuardHook | None = None,
+    dedup: DedupHook | None = None,
 ) -> str | None:
     """only_steps restricts execution to the given step ids (Phase 2)."""
     names = ctx.env.read_tools + list(ctx.env.write_labels)
@@ -45,7 +56,7 @@ async def execute(
         p = plan_json
         if only_steps is not None and isinstance(p, dict):
             p = {**p, "steps": [s for s in p.get("steps", []) if s.get("step_id") in only_steps]}
-        task += "\n\nPlan (JSON):\n" + json.dumps(p, indent=1)
+        task += PLAN_MARK + json.dumps(p, indent=1)
     else:
         task += f"\n\nThe Planner's plan is in the shared file {PLAN}. Read it with read_shared, then execute it."
         if only_steps is not None:
@@ -54,7 +65,7 @@ async def execute(
         names = names + ["read_shared"]
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": task}]
     start = len(ctx.log.events)
-    report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args, guard=guard)
+    report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args, guard=guard, dedup=dedup)
     steps = [s.get("step_id") for s in (plan_json or {}).get("steps", [])] if isinstance(plan_json, dict) else []
     if only_steps is not None:
         steps = [s for s in steps if s in only_steps]
@@ -65,5 +76,5 @@ async def execute(
             break
         ctx.log.emit("nudge", {"agent": "executor", "pending": pending})
         messages.append({"role": "user", "content": NUDGE.format(pending=", ".join(pending))})
-        report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns // 2, on_return=on_return, on_args=on_args, guard=guard)
+        report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns // 2, on_return=on_return, on_args=on_args, guard=guard, dedup=dedup)
     return report

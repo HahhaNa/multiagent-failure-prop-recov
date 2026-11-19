@@ -37,6 +37,8 @@ class RunSpec:
     ref_seed: int
     branch_seed: int
     recover_from: str | None = None  # R1: faulted run directory to restart from
+    method: str | None = None  # Phase 2 recovery method (recover_from = F)
+    params: str = ""  # Phase 2 options, e.g. "budget=4,tau1=0.2"
 
     @property
     def name(self) -> str:
@@ -147,6 +149,62 @@ def restart_matrix(root: Path, src_exp: str = "main", exp: str = "restart", faul
     return out
 
 
+def load_p2() -> dict:
+    return yaml.safe_load((ROOT / "configs/phase2.yaml").read_text())
+
+
+def gt_matrix(tasks: list[str], modes: list[str], exp: str) -> list[RunSpec]:
+    """k_gt fresh references (R.start) and clean continuations per point on the seed-0 prefix (design §2)."""
+    p2 = load_p2()
+    fc = yaml.safe_load((ROOT / "configs/faults.yaml").read_text())
+    seeds = list(range(*p2["gt_seeds"]))
+    return expand(exp, tasks, modes, seeds, [], fc["clean_points"], seeds)
+
+
+def p2_matrix(root: Path, src: str, exp: str, method: str, params: str = "", tasks: list[str] | None = None) -> list[RunSpec]:
+    """One recovery run per injected fault branch of src (the same branches as R1)."""
+    out = []
+    for r in restart_matrix(root, src, exp):
+        if tasks is None or r.task in tasks:
+            out.append(RunSpec(exp, r.task, r.mode, r.fault, r.ref_seed, r.branch_seed, recover_from=r.recover_from, method=method, params=params))
+    return out
+
+
+def p2cal_matrix(root: Path, src: str, exp: str, params: str = "") -> list[RunSpec]:
+    """Calibration control: SPRT decisions on clean continuations treated as faulted (design §5)."""
+    out = []
+    for s in summaries(root, src):
+        f = s.get("fault") or ""
+        if f.startswith("CLEAN_") and s.get("injected") is False and s.get("branched", True):
+            out.append(RunSpec(exp, s["task"], s["mode"], f, s["ref_seed"], s["branch_seed"], recover_from=s["run_dir"], method="sprt",
+                               params=",".join(x for x in (params, "decide_only=1") if x)))
+    return out
+
+
+def recovery_config(cfg: dict, r: RunSpec, model_name: str, single_tool_calls: bool, root: Path):
+    from .recovery.episode import RecoveryConfig
+    from .recovery.faulted import FaultedRun
+    from .recovery.gt import gt_counts
+    from .recovery.sprt import SPRTParams
+
+    p2 = load_p2()
+    kv = dict(x.split("=", 1) for x in r.params.split(",") if x)
+    sp = {**p2["sprt"], **{k: float(kv[k]) for k in ("tau0", "tau1", "alpha", "beta") if k in kv}}
+    sp["n_max"] = int(kv.get("n_max", sp["n_max"]))
+    budget = float(kv.get("budget", "inf"))
+    gt = None
+    if r.method == "oracle":
+        point = (FaultedRun.load(r.recover_from).record or {}).get("point", "")
+        gt = gt_counts(root, p2["gt_exp"], r.task, r.mode, point, range(*p2["gt_seeds"]))
+    return RecoveryConfig(
+        method=r.method, budget=budget, sprt=SPRTParams(**sp), compensation=kv.get("compensation", "1") == "1",
+        snapshot_restore=kv.get("snapshot", "0") == "1", seed=p2["recovery_seed0"] + (r.branch_seed - cfg["branch_seeds"][0]),
+        probe_seed=p2["probe_seed0"], model=model_name, temperature=cfg["temperature"], max_tokens=cfg["max_tokens"],
+        version=cfg["benchmark_version"], turns=cfg["turns"], tool_output_chars=cfg["tool_output_chars"], single_tool_calls=single_tool_calls,
+        gt=gt, decide_only=kv.get("decide_only", "0") == "1",
+    )
+
+
 # ---------- execution ----------
 
 
@@ -182,6 +240,8 @@ class Runner:
             d = r.path(self.root)
             self._prepare_dir(d)
             c = self.cfg
+            if r.method:
+                return await self._recover(r, d)
             ec = EpisodeConfig(
                 spec=self.specs[r.task], mode=r.mode, fault_id=r.fault, ref_seed=r.ref_seed, branch_seed=r.branch_seed,
                 model=self.model_name, temperature=c["temperature"], max_tokens=c["max_tokens"], version=c["benchmark_version"],
@@ -207,6 +267,29 @@ class Runner:
             self.stats["live_calls"] += s["n_live_calls"]
             self.executed.append(str(d))
             return s
+
+    async def _recover(self, r: RunSpec, d: Path) -> dict | None:
+        from .recovery.episode import Recovery
+        from .recovery.faulted import FaultedRun
+
+        rc = recovery_config(self.cfg, r, self.model_name, self.single_tool_calls, self.root)
+        man = {**self.manifest, "run": r.__dict__, "seed": rc.seed, "probe_seed": rc.probe_seed, "recovery": {
+            "method": rc.method, "budget": str(rc.budget), "sprt": rc.sprt.__dict__, "compensation": rc.compensation,
+            "snapshot_restore": rc.snapshot_restore, "decide_only": rc.decide_only}, "start": datetime.now().isoformat()}
+        (d / "manifest.json").write_text(json.dumps(man, indent=1))
+        try:
+            s = await Recovery(FaultedRun.load(r.recover_from), self.specs[r.task], rc, self.llm, d).run()
+        except Exception:  # noqa: BLE001 - harness bug: keep the run dir, labeled FAILED
+            (d / "FAILED").write_text(traceback.format_exc())
+            self.stats["failed"] += 1
+            return None
+        man["end"] = datetime.now().isoformat()
+        (d / "manifest.json").write_text(json.dumps(man, indent=1))
+        (d / "DONE").write_text(man["end"])
+        self.stats["done"] += 1
+        self.stats["live_calls"] += s["recovery_live_calls"]
+        self.executed.append(str(d))
+        return s
 
     async def run_all(self, runs: list[RunSpec], log: Path | None = None) -> None:
         refs = [r for r in runs if r.fault is None]
@@ -294,6 +377,8 @@ def main() -> None:
     ap.add_argument("--task-set", default="selected", choices=["selected", "wide"])
     ap.add_argument("--src", default="main", help="restart: faulted experiment to recover")
     ap.add_argument("--prefix-seed", type=int, default=1, help="prefix: reference seed whose prefix the branches replay")
+    ap.add_argument("--method", default="sprt", help="p2: recovery method")
+    ap.add_argument("--params", default="", help="p2: options, e.g. budget=4,tau1=0.2")
     a = ap.parse_args()
     cfg = load_cfg()
     root = runs_root(cfg)
@@ -364,6 +449,13 @@ def main() -> None:
         runs = prefix_matrix(selected, a.prefix_seed, modes, a.exp or f"prefix_s{a.prefix_seed}")
     elif a.stage == "refs":  # clean go/no-go sample for a new model: selected tasks x modes, ref seeds 0-1
         runs = expand(a.exp or f"refs_{a.model}", selected, modes, cfg["ref_seeds"][: a.k or 2], [], [], [])
+    elif a.stage == "gt":  # Phase 2 ground truth (design §2)
+        runs = gt_matrix(selected, modes, a.exp or load_p2()["gt_exp"])
+    elif a.stage == "p2":  # Phase 2 recovery methods over the injected branches of --src
+        tag = "_".join(x.replace("=", "") for x in a.params.split(",") if x)
+        runs = p2_matrix(root, a.src if a.src != "main" else load_p2()["src"], a.exp or f"p2_{a.method}{'_' + tag if tag else ''}", a.method, a.params)
+    elif a.stage == "p2cal":  # Phase 2 probe calibration control
+        runs = p2cal_matrix(root, a.src if a.src != "main" else load_p2()["src"], a.exp or "p2cal", a.params)
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:

@@ -1,0 +1,34 @@
+rule: 'design §9: one task per suite (random.Random(2027).choice over the sorted suite tasks) plus the task with the most
+  injected Phase 1 main branches among the rest (ties: alphabetical). Held-out tasks choose B; the rest evaluate.'
+seed: 2027
+held_out:
+- banking.user_task_0
+- workspace.user_task_7
+- slack.user_task_11
+- banking.user_task_13
+evaluation:
+- workspace.user_task_9
+- slack.user_task_9
+- workspace.user_task_18
+- workspace.user_task_20
+- slack.user_task_12
+- slack.user_task_5
+- slack.user_task_7
+- banking.user_task_9
+- slack.user_task_8
+- workspace.user_task_29
+branches_phase1:
+  banking.user_task_0: 160
+  workspace.user_task_9: 160
+  slack.user_task_9: 150
+  banking.user_task_13: 160
+  workspace.user_task_18: 160
+  slack.user_task_11: 140
+  workspace.user_task_20: 160
+  slack.user_task_12: 130
+  slack.user_task_5: 150
+  slack.user_task_7: 130
+  banking.user_task_9: 145
+  slack.user_task_8: 135
+  workspace.user_task_29: 160
+  workspace.user_task_7: 70
