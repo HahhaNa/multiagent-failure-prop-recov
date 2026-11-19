@@ -8,6 +8,7 @@ dependencies = [
     "matplotlib>=3.11.2",
     "pandas>=3.1.0",
     "pyyaml>=6.0.3",
+    "tau2",
     "vllm==0.33.0",
 ]
 
@@ -22,6 +23,9 @@ constraint-dependencies = [
     "nvidia-cuda-crt==13.0.*",
     "nvidia-nvvm==13.0.*",
 ]
+
+[tool.uv.sources]
+tau2 = { git = "https://github.com/sierra-research/tau2-bench", rev = "c06b07dd7c4d4ec61ba6ff9bcdf0b15dd7ef36d4" }
 
 [dependency-groups]
 dev = [
