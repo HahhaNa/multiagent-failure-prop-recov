@@ -290,3 +290,24 @@ and every null or failed check reported next to the results that passed.
   `bad or not strict_match` in every analysis script; default stays the AgentDojo-based outcome.
 - Per-run and per-call WP0 labels are written by `analysis/wp0_labels.py` to `data/tables/<exp>/wp0_runs.csv.gz` and
   `wp0_calls.csv.gz`.
+
+## Amendment 6 — WP0 closed without the human audit (2026-11-18, before any human label exists)
+
+The annotator named in 5.1 cannot label the English traces without help from another automated system, which
+would make the labels neither human nor independent of the automated audits. The human audit (5.1) is not done; no
+human answer was collected or read. Consequences, fixed now:
+- 5.1: agreement with a human reference is not reported. The label-validity evidence stays the three blind
+  automated audits (V4; round 3 passes 0.90, pooled 0.87) and is described as automated, not human.
+- 5.2: with no semantic reference, the 5.2 fallback applies: no primary equivalence is chosen; irreversibility and
+  calls_dependent are reported under E1, E2 and E3. Text quoting a single number uses E1 and states the E2/E3 range.
+- 5.3–5.6 stand as computed (`docs/revised_plan.md` §10). Main tables are regenerated once with `FPR_CALENDAR=doc`.
+- 5.7 done criterion: met when the regenerated tables and the updated claims table are committed.
+- Limitation stated in the report: no human label audit.
+
+## Amendment 7 — Phase 2 selective recovery (2026-11-18, before any Phase 2 code runs on a real model)
+
+Definitions (interventional dependence, ground truth), theory assumptions, method (R4p-SPRT), baselines, realistic
+detection, breadth admission rules, metrics, held-out split rule, power-simulation rule for the utility margin, success
+criteria, acceptance tests and run matrix are fixed in `docs/phase2_design.md` (§1–§11). Target: NeurIPS 2027 main
+track; Tier 1 is the course deliverable. The held-out split is written to `configs/phase2_split.yaml` and committed before
+the first real-model R4p run. Any change after that is a new dated amendment.

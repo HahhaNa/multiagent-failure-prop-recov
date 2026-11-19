@@ -155,9 +155,11 @@ async def tool_loop(
                 result = err
             elif blocked is not None:
                 result, err = f"Blocked by verifier: {blocked}", "blocked_by_verifier"
+            elif tc.name == "read_shared" and "read_shared" not in allowed:
+                result = err = f"ToolNotFoundError: `read_shared` is not available to the {agent}."
             elif tc.name == "read_shared":
                 path = str(args.get("path", ""))
-                result = ctx.bb.read_text(path, agent) if "read_shared" in allowed else "ToolNotFoundError"
+                result = ctx.bb.read_text(path, agent)
                 key = f"bb:{path}"
                 if key in ctx.bb.store.versions:
                     reads = [ctx.bb.store.current(key).vid]

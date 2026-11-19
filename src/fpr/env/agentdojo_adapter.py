@@ -111,7 +111,8 @@ class TaskEnv:
     def call(self, name: str, args: dict, agent: str, call_id: str, allowed: list[str]) -> tuple[str, str | None, list[str], list[str]]:
         """Run a tool. Returns (result text, error, versions read, versions written)."""
         if name not in allowed:
-            return "", f"ToolNotFoundError: `{name}` is not available to the {agent}.", [], []
+            err = f"ToolNotFoundError: `{name}` is not available to the {agent}."
+            return err, err, [], []
         deps = self.deps(name)
         reads = [self.store.read(f"env:{d}", agent).vid for d in deps]
         result, err = self.runtime.run_function(self.env, name, copy.deepcopy(args))
