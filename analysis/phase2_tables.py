@@ -319,7 +319,7 @@ def fig_frontier(t1: pd.DataFrame, path: Path) -> None:
     plt = style()
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.0), sharey=True)
     for ax, fam in zip(axes, FAMILIES):
-        x = t1[(t1.family == fam) & t1.recall.notna()]
+        x = t1[(t1.family == fam) & t1.recall.notna() & ~t1.method.str.startswith("R4p ")]  # ablations are in the table only
         sp = x[x.method.str.startswith("R4p-SPRT")]
         ax.plot(sp.tokens_x_r1, sp.recall, "-o", color="#2a6f97", ms=3, lw=1, label="R4p-SPRT (B = 4…∞)")
         for r in x.itertuples():

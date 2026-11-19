@@ -251,19 +251,66 @@ Verifier attribution (`data/tables/verify/verifier_taint_reach.md`): V1 removes 
 
 Case studies (7, generated): `data/cases/main/cases.md`.
 
-## 9. Phase 2 plan
+## 9. Phase 2: selective recovery with sequential probing (Tier 1)
 
-Phase 2 evaluates recovery that uses the dependency information collected here. The faulty artifact's identity is given to each method after the faulted run ends, so recovery is evaluated separately from detection. Every method starts from the faulted run's final state, including external effects.
+Design and pre-registration: `docs/phase2_design.md`, `docs/preregistration.md` Amendments 6–8; proof sketches:
+`docs/phase2_theory.md`. Code: `src/fpr/recovery/` (faulted-run loader, probe builders, truncated SPRT, recovery
+episode, baselines, ground truth, detectors); acceptance tests `tests/test_p2_recovery.py` (design §10, MockLLM).
 
-| ID | Method |
-|---|---|
-| R2 | rollback: restore the whole internal snapshot from just before the fault and rerun downstream live |
-| R4a | selective recovery over the **declared** graph closure |
-| R4b | selective recovery over **data-flow + taint** |
+**Harness fix (design §7.1).** A call to a tool outside an agent's allowed list now returns the error text instead of an
+empty tool message. Qwen3-8B `main`, `verify` and `restart` were rerun as `main_h2`, `verify_h2`, `restart_h2`; Phase 1
+runs are unchanged. The fix lowers clean success (refs: message 0.857 → 0.829, state 0.786 → 0.600): told that a write
+tool is unavailable, the researcher tries other write tools and the state-mode planner returns an empty plan
+(`data/tables/phase2/harness_comparison.md`). All Phase 2 numbers use the `*_h2` runs.
 
-Selective recovery: compute the invalidated claims/steps/calls; restore only state objects written by invalidated calls (per-object restore), compensate compensable actions, log irreversible ones as unrecoverable; re-run the researcher only for invalidated claims; partially replan; execute only new or changed steps; replay valid LLM calls from the cache. Metrics add retained work, **reuse precision** and **invalidation recall** against the Phase 1 clean continuations (the W4 ground truth), and recovery latency vs tracking overhead. A **drift scenario** applies 1–2 legitimate external changes after the fault and counts what R2 clobbers vs R4b.
+**Definitions.** An artifact downstream of a fault is *dependent* if a correct run reproduces it with probability
+p_u <= 0.05 and *reusable* if p_u >= 0.30; ground truth from 30 fresh clean continuations per task × mode × branch point
+(`gt_h2`, 4,200 runs; one-sided Clopper–Pearson). R4p-SPRT invalidates the declared ∪ taint closure and tests every other
+downstream plan step and executor call with a truncated SPRT (α = 0.05, β = 0.20, n_max = 8) on probes that re-issue the
+producing request with corrected parents; budget B probes per branch.
 
-Hooks already in place: replay cache, versioned store with per-object restore, external-world log, reversibility labels, overhead timers, planner partial replanning, executor step subsets, prior-effect re-application (R1), and the counterfactual artifact table (`data/tables/main/cf_artifacts.csv.gz`). Phase 1 results suggest Phase 2 must handle (a) the 40% of dependent artifacts that taint misses, (b) the 3–4-step irreversibility window of plan- and executor-level adversarial faults, which leaves almost nothing to recover after the fact.
+**Methods** (2,105 injected `main_h2` branches each): R0 none, R1 restart (`restart_h2`), R2 rollback to the fault,
+G-B0 declared ∪ taint, LLM-judge, Support (independent trusted support), R4p-1shot, R4p-SPRT at B ∈ {4, 8, 16, 32, ∞},
+oracle (ground truth), ablations (no compensation, whole-snapshot restore, τ1 ∈ {0.2, 0.5}, α ∈ {0.01, 0.10}), a probe
+calibration control on 550 clean continuations, and realistic detection (R3 verifier prompts and a MELON-style masked
+re-execution as offline detectors). Every Phase 2 method uses a duplicate guard (Amendment 8).
+
+**Results** (evaluation tasks = 10 non-held-out tasks; 95% cluster bootstrap over tasks;
+`data/tables/phase2/table1_methods.md`, `table2_graph_accuracy.md`, `table3_calibration.md`, `criteria.md`,
+`table4_detection.md`, `channels.md`; figures `data/figures/phase2/`):
+
+| Method (accidental / adversarial) | Utility | Invalidation recall | Reuse precision | Tokens × R1 | Branches with duplicates |
+|---|---|---|---|---|---|
+| R0 | 0.48 / 0.43 | — | — | 0 | 0 |
+| R1 restart | 0.67 / 0.49 | — | — | 1.00 | 0.13 / 0.18 |
+| R2 rollback | 0.82 / 0.56 | 1.00 / 1.00 | — | 0.60 / 0.55 | 0 |
+| G-B0 (declared ∪ taint) | 0.73 / 0.52 | 0.72 / 0.81 | 0.46 / 0.80 | 0.51 / 0.47 | 0 |
+| LLM-judge | 0.75 / 0.52 | 0.97 / 0.90 | 0.56 / 0.65 | 0.58 / 0.55 | 0 |
+| Support | 0.72 / 0.53 | 0.64 / 0.73 | 0.48 / 0.74 | 0.52 / 0.49 | 0 |
+| R4p-1shot | 0.74 / 0.51 | 0.94 / 0.93 | 0.76 / 0.90 | 0.60 / 0.61 | 0 |
+| R4p-SPRT B=4 (chosen on held-out) | 0.74 / 0.52 | 0.87 / 0.88 | 0.61 / 0.85 | 0.66 / 0.68 | 0 |
+| R4p-SPRT B=∞ | 0.74 / 0.51 | 0.94 / 0.92 | 0.76 / 0.89 | 0.80 / 0.91 | 0 |
+| Oracle | 0.78 / 0.52 | 1.00 / 1.00 | 1.00 / 1.00 | 0.53 / 0.48 | 0 |
+
+- Pre-registered criteria for R4p-SPRT at B = 4 (`criteria.md`): utility non-inferior to R1 (accidental, +0.07, lower
+  bound −0.06 > −0.10) and zero duplicates **pass**; recall 0.87 (≥ 0.90), reuse precision 0.78 (≥ 0.95), tokens 0.65 × R1
+  (≤ 0.5) and the false-reuse calibration **fail**.
+- Calibration: among probed dependent artifacts the observed false-reuse rate is 0.26 [0.19, 0.34] at nominal α = 0.05
+  and does not move with α or τ1 (`table3_calibration.md`). The probe distribution (F's request with corrected parents
+  substituted) is not the ground-truth distribution (a full clean continuation), so assumption A2 does not hold here.
+  The calibration control's false-invalidation rate on reusable artifacts is 0.13 [0.06, 0.19] (β = 0.20).
+- R2 dominates the selective methods on this benchmark: higher utility at lower cost, because each probe re-issues a long
+  executor request while the recomputation it saves is short. Residual harm is the same for every method (0.07 / 0.53):
+  the harmful effects are irreversible before recovery starts.
+- Proposition 1 in data (`channels.md`): taint finds 65% (accidental) / 71% (adversarial) of dependent artifacts; the rest
+  are value substitutions without the injected literal (mostly omission and timeout faults), paraphrases, omissions,
+  added steps and derived values.
+- Realistic detection (all 14 tasks, `table4_detection.md`): the R3 verifier prompts flag 79% / 87% of branches, early enough that
+  verifier + R2 reaches utility 0.74 / 0.72 with adversarial harm 0.08; the MELON-style detector flags 2% / 6%.
+
+Reproduce: `scripts/phase2_h2.sh`, `uv run python -m fpr.runner gt`, `scripts/phase2_methods.sh` (≈ 4 GPU hours in
+total on one RTX 5070 Ti), then `analysis/phase2_power.py`, `phase2_split.py`, `phase2_harness.py`, `phase2_tables.py`,
+`phase2_channels.py`. Run summaries: `data/runs_{main,verify,restart,gt}_h2.csv.gz`, `data/runs_p2*.csv.gz`.
 
 ## 10. Repository layout
 

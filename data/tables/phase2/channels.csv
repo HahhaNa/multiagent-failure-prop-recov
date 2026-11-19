@@ -1,0 +1,20 @@
+family,channel,n,share,n_missed_by_union
+accidental,added step,38,0.02661064425770308,34.0
+accidental,derived value,7,0.004901960784313725,6.0
+accidental,format change,11,0.007703081232492998,1.0
+accidental,literal (taint),930,0.6512605042016807,0.0
+accidental,omission,95,0.0665266106442577,74.0
+accidental,other,268,0.1876750700280112,181.0
+accidental,paraphrase,79,0.055322128851540614,67.0
+adversarial,added step,50,0.0511770726714432,39.0
+adversarial,derived value,24,0.02456499488229273,18.0
+adversarial,format change,4,0.0040941658137154556,4.0
+adversarial,literal (taint),698,0.714431934493347,0.0
+adversarial,omission,18,0.01842374616171955,5.0
+adversarial,other,117,0.11975435005117707,60.0
+adversarial,paraphrase,66,0.06755373592630501,58.0
+control,added step,3,0.046153846153846156,2.0
+control,literal (taint),11,0.16923076923076924,0.0
+control,omission,12,0.18461538461538463,10.0
+control,other,21,0.3230769230769231,7.0
+control,paraphrase,18,0.27692307692307694,9.0

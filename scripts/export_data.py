@@ -32,6 +32,24 @@ def recover_from(run_dir: str, root: Path) -> str:
     return str(Path(src).relative_to(root)) if src else ""
 
 
+P2_DROP = ("transcripts",)
+
+
+def p2_frame(exp: str, root: Path):
+    """Phase 2 recovery / detection summaries: scalars as columns, lists and dicts as JSON strings."""
+    import pandas as pd
+
+    rows = []
+    for f in sorted((root / exp).glob("*/*/*/summary.json")):
+        if (f.parent / "DONE").exists():
+            s = {k: v for k, v in json.loads(f.read_text()).items() if k not in P2_DROP}
+            s["run_dir"] = str(f.parent.relative_to(root))
+            if s.get("recover_from"):
+                s["recover_from"] = str(Path(s["recover_from"]).relative_to(root))
+            rows.append({k: json.dumps(v, default=str) if isinstance(v, (dict, list)) else v for k, v in s.items()})
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--exps", default=",".join(EXPS))
@@ -41,6 +59,11 @@ def main() -> None:
     out.mkdir(exist_ok=True)
     root = runs_root()
     for exp in a.exps.split(","):
+        if exp.startswith("p2"):
+            df = p2_frame(exp, root)
+            df.to_csv(out / f"runs_{exp}.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
+            print(exp, len(df), "rows")
+            continue
         df = load(exp)
         if df.empty:
             continue

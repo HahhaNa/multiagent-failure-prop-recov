@@ -1,0 +1,17 @@
+detector,recovery,family,n,detected,utility,utility_lo,utility_hi,harm,harm_lo,harm_hi
+verifier,none,accidental,1125,0.7911,0.4622,0.3606,0.5513,0.0578,0.0094,0.1124
+verifier,none,adversarial,730,0.874,0.4507,0.3305,0.5775,0.5027,0.4433,0.562
+verifier,R2,accidental,1125,0.7911,0.736,0.6437,0.8207,0.0018,0.0,0.0043
+verifier,R2,adversarial,730,0.874,0.7151,0.6084,0.8269,0.0836,0.0503,0.1188
+verifier,R4p-SPRT,accidental,1125,0.7911,0.696,0.6084,0.7779,0.0018,0.0,0.0043
+verifier,R4p-SPRT,adversarial,730,0.874,0.6425,0.5428,0.7413,0.0836,0.0503,0.1188
+melon,none,accidental,1125,0.0222,0.4622,0.3606,0.5513,0.0578,0.0094,0.1124
+melon,none,adversarial,730,0.0548,0.4507,0.3305,0.5775,0.5027,0.4433,0.562
+melon,R2,accidental,1125,0.0222,0.48,0.4042,0.555,0.0578,0.0094,0.1124
+melon,R2,adversarial,730,0.0548,0.474,0.3632,0.5906,0.463,0.4042,0.5232
+melon,R4p-SPRT,accidental,1125,0.0222,0.4756,0.4009,0.5532,0.0578,0.0094,0.1124
+melon,R4p-SPRT,adversarial,730,0.0548,0.4699,0.3584,0.5841,0.463,0.4042,0.5232
+oracle,R2,accidental,1125,1.0,0.7689,0.6541,0.8645,0.0578,0.0094,0.1124
+oracle,R4p-SPRT B=inf,accidental,1125,1.0,0.6933,0.6033,0.7726,0.0578,0.0094,0.1124
+oracle,R2,adversarial,730,1.0,0.5589,0.4311,0.684,0.5027,0.4433,0.562
+oracle,R4p-SPRT B=inf,adversarial,730,1.0,0.5068,0.3959,0.6203,0.5027,0.4433,0.562

@@ -1,0 +1,13 @@
+graph,family,n,recall,precision,f1,recall_ci,recall_ci_lo,recall_ci_hi
+declared ∪ taint,accidental,1973,0.7458,0.8744,0.805,0.7458,0.6503,0.8218
+declared ∪ taint,adversarial,1822,0.8117,0.9374,0.87,0.8117,0.7551,0.8624
+data-flow,accidental,1973,1.0,0.7238,0.8398,1.0,1.0,1.0
+data-flow,adversarial,1822,1.0,0.5362,0.6981,1.0,1.0,1.0
+LLM-judge,accidental,1973,0.9734,0.7343,0.8371,0.9734,0.9336,0.994
+LLM-judge,adversarial,1822,0.9089,0.5744,0.7039,0.9089,0.8743,0.9418
+Support,accidental,1973,0.6036,0.9441,0.7364,0.6036,0.445,0.741
+Support,adversarial,1822,0.6981,0.8986,0.7857,0.6981,0.5948,0.7969
+R4p-SPRT B=4,accidental,1973,0.8943,0.8658,0.8798,0.8943,0.8512,0.9358
+R4p-SPRT B=4,adversarial,1822,0.8936,0.8584,0.8756,0.8936,0.8677,0.9232
+Oracle,accidental,1973,1.0,1.0,1.0,1.0,1.0,1.0
+Oracle,adversarial,1822,1.0,1.0,1.0,1.0,1.0,1.0
