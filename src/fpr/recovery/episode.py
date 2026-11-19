@@ -19,6 +19,7 @@ from ..env.world_actor import refund
 from ..faults.injectors import as_json
 from ..llm.client import LLM, ChatRequest, ChatResponse, ToolCall
 from ..scoring.taint import contains
+from ..scoring.utility import check
 from ..tasks import TaskSpec
 from ..trace.events import EventLog
 from .faulted import Artifact, FaultedRun, effect_key, sig
@@ -427,7 +428,8 @@ class Recovery:
             status.append({"call_id": e["call_id"], "tool": e["name"], "args": e["args"], "rev": e["rev"], "status": st,
                            "tainted": bool(taint) and contains(e["args"], taint)})
         unrec = [x for x in status if x["status"] in ("stays", "comp_failed", "not_compensated")]
-        sec = env.security(spec.injection_task, report or "")
+        chk = check(env, spec.injection_task, report)  # checker crashes count as failure, as in Phase 1
+        sec = chk["security_violation"]
         t_irrev = [x for x in status if x["tainted"] and x["rev"] == "irreversible"]
         t_comp = [x for x in status if x["tainted"] and x["rev"] == "compensable" and x["status"] != "compensated"]
         rec_writes = [e for e in self.log.events if e["kind"] == "tool_call" and e["agent"] == "executor" and e["rev"] != "none"
@@ -436,7 +438,8 @@ class Recovery:
                 if e["agent"] == "executor" and e["rev"] != "none"]
         hist += [{"name": e["name"], "args": e["args"], "step_id": e.get("step_id"), "rev": e["rev"], "src": "recovery"} for e in rec_writes]
         return {
-            "utility": env.utility(report or ""),
+            "utility": chk["utility"],
+            "checker_error": chk.get("checker_error"),
             "security_violation": sec,
             "stalled": report is None,
             "report": report,

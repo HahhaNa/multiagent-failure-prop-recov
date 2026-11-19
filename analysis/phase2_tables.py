@@ -109,6 +109,10 @@ def branch_table(prefix: str) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, pd.
     f0 = f0[f0.fault.notna() & ~f0.fault.astype(str).str.startswith("CLEAN_") & f0.injected.fillna(False).astype(bool)]
     key = ["task", "mode", "fault", "branch_seed"]
     r1 = summaries("restart_h2")
+    name = r1.run_dir.str.split("/").str[-1]  # R1 summaries carry fault=None and the recovery seed; the dir name is F's
+    r1["fault"] = name.str.rsplit("_b", n=1).str[0]
+    r1["branch_seed"] = name.str.rsplit("_b", n=1).str[1].astype(int)
+    r1["family"] = r1.fault.map(lambda f: conditions().loc[f, "family"] if f in conditions().index else None)
     r1["tokens"] = r1.prompt_tokens + r1.completion_tokens
     f0["strict0"] = [bool(u) and run_labels(rd)[0]["strict_match"] for u, rd in zip(f0.utility, f0.run_dir)]
     r1["strict"] = [bool(u) and run_labels(rd)[0]["strict_match"] for u, rd in zip(r1.utility, r1.run_dir)]
@@ -130,9 +134,13 @@ def branch_table(prefix: str) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, pd.
             s = json.loads((Path(rd) / "summary.json").read_text())
             f_eff[rd] = {e2(e["tool"], e["args"]) for e in s.get("external_effects") or []}
         dup_e2 = [any(e2(e["tool"], e["args"]) in f_eff[rd] for e in ne) for rd, ne in zip(df.recover_from, df.new_effects)]
+        dup_net = []  # E1 duplicates of F effects that are still in the world (a re-issue after a successful refund is not one)
+        for du, st in zip(df.duplicate_effects, df.f_effect_status):
+            comp = {sig(x["tool"], x["args"]) for x in st if x["status"] == "compensated"}
+            dup_net.append(any(sig(d["tool"], d["args"]) not in comp for d in du))
         st = [bool(u) and strict([c for c in h], SPECS[t]["gt_writes"]) == (0, 0) for u, h, t in zip(df.utility, df.exec_calls, df.task)]
         rows.append(df[key + ["family", "split", "r1_tokens"]].assign(method=name, utility=df.utility, strict=st, residual_harm=df.residual_harm,
-                                                                      dup=df.duplicates > 0, dup_e2=dup_e2, unrec=df.unrecoverable > 0,
+                                                                      dup=df.duplicates > 0, dup_e2=dup_e2, dup_net=dup_net, unrec=df.unrecoverable > 0,
                                                                       tokens=df.recovery_tokens, probes=df.n_probes,
                                                                       unprobed=df.unprobed_reuse))
         arts[name] = artifacts(df)
@@ -155,6 +163,7 @@ def table1(b: pd.DataFrame, arts: dict, split: str | None) -> pd.DataFrame:
         row.update(with_ci(g, lambda x: ratio(x, "tokens", "r1_tokens"), "tokens_x_r1"))
         row["dup_share"] = round(float(g.dup.astype(float).mean()), 4)
         row["dup_share_e2"] = round(float(g.dup_e2.astype(float).mean()), 4)
+        row["dup_share_net"] = round(float(g.dup_net.fillna(g.dup).astype(float).mean()), 4)
         row["unrecoverable_share"] = round(float(g.unrec.astype(float).mean()), 4) if g.unrec.notna().any() else np.nan
         row["tokens_mean"] = round(float(g.tokens.mean()), 1)
         if a is not None and len(a):
@@ -305,6 +314,8 @@ def detection(prefix: str, base: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
 
 
 def fig_frontier(t1: pd.DataFrame, path: Path) -> None:
+    if "recall" not in t1 or t1.recall.isna().all():
+        return
     plt = style()
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.0), sharey=True)
     for ax, fam in zip(axes, FAMILIES):
