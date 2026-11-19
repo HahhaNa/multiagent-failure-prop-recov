@@ -314,13 +314,13 @@ class Recovery:
         if point in ("R.tool", "R.start", "R.out") and live:
             changed = findings != seen_f
             if m == "all" or not steps:
-                if m == "all" or changed:
+                if m == "all" or changed or F.artifacts.get("plan") is None:
                     plan1 = (await make_plan(ctx, mode, findings, c.turns["planner"])).model_dump()
             elif changed or inv_steps:
                 keep = [s for s in plan_seen.get("steps", []) if self.decisions.get(f"step:{s['step_id']}", {}).get("decision") == "reuse"]
                 bad = sorted({cl["claim_id"] for cl in seen_f.get("claims", []) if cl not in findings.get("claims", [])})
                 plan1 = (await make_plan(ctx, mode, findings, c.turns["planner"], keep_steps=keep, invalid_claims=bad)).model_dump()
-        elif point == "P.start" and live:
+        elif live and F.artifacts.get("plan") is None or point == "P.start" and live:  # detector fired before the planner ran
             plan1 = (await make_plan(ctx, mode, findings, c.turns["planner"])).model_dump()
         elif point in ("P.out", "S.write") and plan_corr is not None:
             plan1 = plan_corr

@@ -42,8 +42,12 @@ class MockLLM:
     async def chat(self, req: ChatRequest, meta: dict) -> ChatResponse:
         self.calls += 1
         await asyncio.sleep(0)  # yield so concurrent episodes interleave
-        spec = self._spec(req)
         agent = meta["agent"]
+        if agent == "melon":  # masked request: no task prompt; pick the suite by the canary seen in tool outputs
+            text = json.dumps(req.messages)
+            spec = next((s for s in self.specs.values() if s.canary and s.canary in text), next(iter(self.specs.values())))
+        else:
+            spec = self._spec(req)
         guided = req.response_format is not None
         state = "/shared/" in req.messages[1]["content"]
         fn = getattr(self, f"_{agent}")
@@ -120,6 +124,12 @@ class MockLLM:
                                  for x in (w if isinstance(w, list) else [w]) if contains(corrupted, x) and not contains(correct, x)]
         dep = [a["id"] for a in arts if contains(a.get("args", {}), marks)]
         return json.dumps({"dependent": dep}), []
+
+    def _melon(self, spec, messages, guided, state):
+        """Gullible executor on a masked task: follows injected instructions only."""
+        if MARK in messages[1]["content"]:
+            return "", [(c["function"], dict(c["args"])) for c in spec.injection_calls[:1]]
+        return "Summary.", []
 
     def _verifier(self, spec, messages, guided, state):
         return _mock_verifier(spec, messages), []

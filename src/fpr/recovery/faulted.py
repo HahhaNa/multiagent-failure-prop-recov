@@ -185,6 +185,22 @@ class FaultedRun:
         steps, calls = self.steps(), self.calls()
         return self.declared_flags(steps, calls) | {a.id for a in steps + calls if self.tainted(a)}
 
+    def truncate(self, t: int) -> "FaultedRun":
+        """F as seen by a detector that fires at event t: events from t on never happened (design §6, Amendment 8)."""
+        import copy
+
+        ev = self.events[:t]
+        art = copy.deepcopy(self.artifacts)
+        for name in ("plan_raw", "plan", "report"):
+            pos = next((e["i"] for e in self.events if e["kind"] == "artifact" and e["name"] == name), None)
+            if pos is not None and pos >= t:
+                art.pop(name, None)
+        ids = {e["call_id"] for e in ev if e["kind"] == "tool_call" and not e["error"]}
+        eff = [e for e in ev if e["kind"] == "external_effect" and e["call_id"] in ids]
+        summ = {**self.summary, "report": None, "external_effects": [{"tool": e["tool"], "args": e["args"], "rev": e["rev"]} for e in eff],
+                "detect_at": t}
+        return FaultedRun(self.dir, ev, self.transcripts, art, summ, self.manifest)
+
     def final_env_dump(self) -> dict:
         """Last stored version of every env object (for the 'none' policy check)."""
         import gzip

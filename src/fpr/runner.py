@@ -161,12 +161,21 @@ def gt_matrix(tasks: list[str], modes: list[str], exp: str) -> list[RunSpec]:
     return expand(exp, tasks, modes, seeds, [], fc["clean_points"], seeds)
 
 
+def detection(root: Path, det: str, r: RunSpec) -> dict | None:
+    p = root / f"p2det_{det}" / r.task / r.mode / r.name / "summary.json"
+    return json.loads(p.read_text()) if (p.parent / "DONE").exists() else None
+
+
 def p2_matrix(root: Path, src: str, exp: str, method: str, params: str = "", tasks: list[str] | None = None) -> list[RunSpec]:
-    """One recovery run per injected fault branch of src (the same branches as R1)."""
+    """One recovery run per injected fault branch of src (the same branches as R1); with detector=X only detected branches."""
+    kv = dict(x.split("=", 1) for x in params.split(",") if x)
     out = []
     for r in restart_matrix(root, src, exp):
-        if tasks is None or r.task in tasks:
-            out.append(RunSpec(exp, r.task, r.mode, r.fault, r.ref_seed, r.branch_seed, recover_from=r.recover_from, method=method, params=params))
+        if tasks is not None and r.task not in tasks:
+            continue
+        if "detector" in kv and not (detection(root, kv["detector"], r) or {}).get("detected"):
+            continue
+        out.append(RunSpec(exp, r.task, r.mode, r.fault, r.ref_seed, r.branch_seed, recover_from=r.recover_from, method=method, params=params))
     return out
 
 
@@ -189,6 +198,7 @@ def recovery_config(cfg: dict, r: RunSpec, model_name: str, single_tool_calls: b
 
     p2 = load_p2()
     kv = dict(x.split("=", 1) for x in r.params.split(",") if x)
+    method = r.method if not r.method.startswith("detect:") else "none"
     sp = {**p2["sprt"], **{k: float(kv[k]) for k in ("tau0", "tau1", "alpha", "beta") if k in kv}}
     sp["n_max"] = int(kv.get("n_max", sp["n_max"]))
     budget = float(kv.get("budget", "inf"))
@@ -197,7 +207,7 @@ def recovery_config(cfg: dict, r: RunSpec, model_name: str, single_tool_calls: b
         point = (FaultedRun.load(r.recover_from).record or {}).get("point", "")
         gt = gt_counts(root, p2["gt_exp"], r.task, r.mode, point, range(*p2["gt_seeds"]))
     return RecoveryConfig(
-        method=r.method, budget=budget, sprt=SPRTParams(**sp), compensation=kv.get("compensation", "1") == "1",
+        method=method, budget=budget, sprt=SPRTParams(**sp), compensation=kv.get("compensation", "1") == "1",
         snapshot_restore=kv.get("snapshot", "0") == "1", seed=p2["recovery_seed0"] + (r.branch_seed - cfg["branch_seeds"][0]),
         probe_seed=p2["probe_seed0"], model=model_name, temperature=cfg["temperature"], max_tokens=cfg["max_tokens"],
         version=cfg["benchmark_version"], turns=cfg["turns"], tool_output_chars=cfg["tool_output_chars"], single_tool_calls=single_tool_calls,
@@ -278,7 +288,22 @@ class Runner:
             "snapshot_restore": rc.snapshot_restore, "decide_only": rc.decide_only}, "start": datetime.now().isoformat()}
         (d / "manifest.json").write_text(json.dumps(man, indent=1))
         try:
-            s = await Recovery(FaultedRun.load(r.recover_from), self.specs[r.task], rc, self.llm, d).run()
+            F = FaultedRun.load(r.recover_from)
+            if r.method.startswith("detect:"):
+                from .recovery.detect import run_detector
+
+                rec = Recovery(F, self.specs[r.task], rc, self.llm, d)
+                s = {"task": r.task, "mode": r.mode, "fault": r.fault, "branch_seed": r.branch_seed, "point": F.point, "recover_from": r.recover_from,
+                     **(await run_detector(rec, r.method.split(":", 1)[1]))}
+                s["recovery_live_calls"] = rec.ctx.usage["live"]
+                rec.log.flush()
+                (d / "summary.json").write_text(json.dumps(s, indent=1, default=str))
+            else:
+                kv = dict(x.split("=", 1) for x in r.params.split(",") if x)
+                if "detector" in kv:
+                    det = detection(self.root, kv["detector"], r) or {}
+                    F = F.truncate(det["detect_at"])
+                s = await Recovery(F, self.specs[r.task], rc, self.llm, d).run()
         except Exception:  # noqa: BLE001 - harness bug: keep the run dir, labeled FAILED
             (d / "FAILED").write_text(traceback.format_exc())
             self.stats["failed"] += 1
@@ -379,6 +404,7 @@ def main() -> None:
     ap.add_argument("--prefix-seed", type=int, default=1, help="prefix: reference seed whose prefix the branches replay")
     ap.add_argument("--method", default="sprt", help="p2: recovery method")
     ap.add_argument("--params", default="", help="p2: options, e.g. budget=4,tau1=0.2")
+    ap.add_argument("--tasks", default="", help="p2: comma-separated task subset")
     a = ap.parse_args()
     cfg = load_cfg()
     root = runs_root(cfg)
@@ -453,7 +479,12 @@ def main() -> None:
         runs = gt_matrix(selected, modes, a.exp or load_p2()["gt_exp"])
     elif a.stage == "p2":  # Phase 2 recovery methods over the injected branches of --src
         tag = "_".join(x.replace("=", "") for x in a.params.split(",") if x)
-        runs = p2_matrix(root, a.src if a.src != "main" else load_p2()["src"], a.exp or f"p2_{a.method}{'_' + tag if tag else ''}", a.method, a.params)
+        runs = p2_matrix(root, a.src if a.src != "main" else load_p2()["src"], a.exp or f"p2_{a.method}{'_' + tag if tag else ''}", a.method, a.params,
+                         a.tasks.split(",") if a.tasks else None)
+    elif a.stage == "p2detect":  # Phase 2 realistic detection (offline detectors on --src branches)
+        runs = [RunSpec(x.exp, x.task, x.mode, x.fault, x.ref_seed, x.branch_seed, recover_from=x.recover_from, method=f"detect:{a.method}")
+                for x in p2_matrix(root, a.src if a.src != "main" else load_p2()["src"], a.exp or f"p2det_{a.method}", a.method, "",
+                                   a.tasks.split(",") if a.tasks else None)]
     elif a.stage == "p2cal":  # Phase 2 probe calibration control
         runs = p2cal_matrix(root, a.src if a.src != "main" else load_p2()["src"], a.exp or "p2cal", a.params)
     elif a.stage == "cross":

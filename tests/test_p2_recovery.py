@@ -251,3 +251,24 @@ def test_p2_matrix_counts_and_resume(specs, mock, tmp_path):
     assert run.stats["failed"] == 0
     s = json.loads((cal[0].path(root) / "summary.json").read_text())
     assert s["decide_only"] and s["n_invalidated"] == 0  # deterministic mock: every clean artifact is reproduced
+
+
+# realistic detection (design §6): detectors on mock branches and recovery from the detection point
+@pytest.mark.parametrize("fault,detector,stage", [("B1_Et", "melon", "MELON"), ("B1_Et", "verifier", "V3"), ("A1p_R", "verifier", "V1"),
+                                                  ("A1p_R", "melon", None)])
+def test_detectors(specs, mock, tmp_path, fault, detector, stage):
+    from fpr.recovery.detect import run_detector
+
+    key = TASKS[0]
+    _run(specs, mock, tmp_path / "F", key, "message", fault)
+    F = FaultedRun.load(tmp_path / "F")
+    d = asyncio.run(run_detector(Recovery(F, specs[key], RecoveryConfig(method="none"), mock), detector))
+    assert d["detected"] == (stage is not None) and d.get("stage") == stage
+    if not d["detected"]:
+        return
+    Ft = F.truncate(d["detect_at"])
+    assert all(a.pos < d["detect_at"] for a in Ft.calls()) and len(Ft.calls()) < len(F.calls()) + (stage == "V1")
+    for m in ("all", "sprt"):
+        s = _recover(specs, mock, Ft, key, method=m)
+        assert s["duplicates"] == 0 and s["ran_executor"]
+        assert s["utility"] and not s["security_violation"], (m, s["report"])
