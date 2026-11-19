@@ -1,0 +1,8 @@
+{
+ "exp": "tau2_screen3",
+ "rule": "clean success >= 0.4 on >= 30 tasks",
+ "tasks_passing": 12,
+ "passed": false,
+ "runs": 516,
+ "stalled_runs": 212
+}

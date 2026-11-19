@@ -1,0 +1,281 @@
+selected:
+- tau2_airline.7
+- tau2_airline.8
+- tau2_airline.11
+- tau2_airline.12
+- tau2_airline.14
+- tau2_airline.15
+- tau2_airline.16
+- tau2_airline.17
+- tau2_airline.18
+- tau2_airline.19
+- tau2_airline.20
+- tau2_airline.21
+- tau2_airline.22
+- tau2_airline.23
+- tau2_airline.24
+- tau2_airline.25
+- tau2_airline.29
+- tau2_airline.30
+- tau2_airline.32
+- tau2_airline.33
+- tau2_airline.35
+- tau2_airline.37
+- tau2_airline.39
+- tau2_airline.40
+- tau2_airline.42
+- tau2_airline.44
+- tau2_retail.0
+- tau2_retail.1
+- tau2_retail.2
+- tau2_retail.3
+- tau2_retail.4
+- tau2_retail.5
+- tau2_retail.6
+- tau2_retail.7
+- tau2_retail.8
+- tau2_retail.9
+- tau2_retail.11
+- tau2_retail.13
+- tau2_retail.14
+- tau2_retail.15
+- tau2_retail.16
+- tau2_retail.17
+- tau2_retail.18
+- tau2_retail.19
+- tau2_retail.20
+- tau2_retail.21
+- tau2_retail.22
+- tau2_retail.23
+- tau2_retail.26
+- tau2_retail.27
+- tau2_retail.28
+- tau2_retail.29
+- tau2_retail.30
+- tau2_retail.31
+- tau2_retail.32
+- tau2_retail.33
+- tau2_retail.34
+- tau2_retail.35
+- tau2_retail.36
+- tau2_retail.37
+- tau2_retail.38
+- tau2_retail.39
+- tau2_retail.40
+- tau2_retail.41
+- tau2_retail.42
+- tau2_retail.43
+- tau2_retail.44
+- tau2_retail.45
+- tau2_retail.46
+- tau2_retail.47
+- tau2_retail.48
+- tau2_retail.49
+- tau2_retail.51
+- tau2_retail.52
+- tau2_retail.53
+- tau2_retail.54
+- tau2_retail.55
+- tau2_retail.56
+- tau2_retail.58
+- tau2_retail.59
+- tau2_retail.60
+- tau2_retail.61
+- tau2_retail.63
+- tau2_retail.64
+- tau2_retail.66
+- tau2_retail.69
+- tau2_retail.70
+- tau2_retail.71
+- tau2_retail.72
+- tau2_retail.73
+- tau2_retail.74
+- tau2_retail.75
+- tau2_retail.76
+- tau2_retail.77
+- tau2_retail.78
+- tau2_retail.79
+- tau2_retail.80
+- tau2_retail.81
+- tau2_retail.82
+- tau2_retail.83
+- tau2_retail.84
+- tau2_retail.85
+- tau2_retail.86
+- tau2_retail.87
+- tau2_retail.88
+- tau2_retail.89
+- tau2_retail.90
+- tau2_retail.91
+- tau2_retail.92
+- tau2_retail.93
+- tau2_retail.94
+- tau2_retail.95
+- tau2_retail.96
+- tau2_retail.97
+- tau2_retail.98
+- tau2_retail.99
+- tau2_retail.100
+- tau2_retail.101
+- tau2_retail.102
+- tau2_retail.103
+- tau2_retail.104
+- tau2_retail.106
+- tau2_retail.107
+- tau2_retail.108
+- tau2_retail.109
+- tau2_retail.110
+- tau2_retail.111
+- tau2_retail.112
+- tau2_retail.113
+sensitivity_ge_0.5:
+- tau2_retail.11
+- tau2_retail.113
+- tau2_retail.17
+- tau2_retail.18
+- tau2_retail.48
+- tau2_retail.51
+- tau2_retail.53
+- tau2_retail.70
+- tau2_retail.73
+- tau2_retail.77
+- tau2_retail.83
+- tau2_retail.87
+pass_rate:
+  tau2_airline.25: 0.25
+  tau2_airline.8: 0.25
+  tau2_airline.11: 0.0
+  tau2_airline.12: 0.0
+  tau2_airline.14: 0.0
+  tau2_airline.15: 0.0
+  tau2_airline.16: 0.0
+  tau2_airline.17: 0.0
+  tau2_airline.18: 0.0
+  tau2_airline.19: 0.0
+  tau2_airline.20: 0.0
+  tau2_airline.21: 0.0
+  tau2_airline.22: 0.0
+  tau2_airline.23: 0.0
+  tau2_airline.24: 0.0
+  tau2_airline.29: 0.0
+  tau2_airline.30: 0.0
+  tau2_airline.32: 0.0
+  tau2_airline.33: 0.0
+  tau2_airline.35: 0.0
+  tau2_airline.37: 0.0
+  tau2_airline.39: 0.0
+  tau2_airline.40: 0.0
+  tau2_airline.42: 0.0
+  tau2_airline.44: 0.0
+  tau2_airline.7: 0.0
+  tau2_retail.17: 1.0
+  tau2_retail.48: 1.0
+  tau2_retail.83: 1.0
+  tau2_retail.11: 0.75
+  tau2_retail.73: 0.75
+  tau2_retail.113: 0.5
+  tau2_retail.18: 0.5
+  tau2_retail.51: 0.5
+  tau2_retail.53: 0.5
+  tau2_retail.70: 0.5
+  tau2_retail.77: 0.5
+  tau2_retail.87: 0.5
+  tau2_retail.0: 0.25
+  tau2_retail.13: 0.25
+  tau2_retail.40: 0.25
+  tau2_retail.45: 0.25
+  tau2_retail.5: 0.25
+  tau2_retail.61: 0.25
+  tau2_retail.79: 0.25
+  tau2_retail.80: 0.25
+  tau2_retail.81: 0.25
+  tau2_retail.84: 0.25
+  tau2_retail.86: 0.25
+  tau2_retail.1: 0.0
+  tau2_retail.100: 0.0
+  tau2_retail.101: 0.0
+  tau2_retail.102: 0.0
+  tau2_retail.103: 0.0
+  tau2_retail.104: 0.0
+  tau2_retail.106: 0.0
+  tau2_retail.107: 0.0
+  tau2_retail.108: 0.0
+  tau2_retail.109: 0.0
+  tau2_retail.110: 0.0
+  tau2_retail.111: 0.0
+  tau2_retail.112: 0.0
+  tau2_retail.14: 0.0
+  tau2_retail.15: 0.0
+  tau2_retail.16: 0.0
+  tau2_retail.19: 0.0
+  tau2_retail.2: 0.0
+  tau2_retail.20: 0.0
+  tau2_retail.21: 0.0
+  tau2_retail.22: 0.0
+  tau2_retail.23: 0.0
+  tau2_retail.26: 0.0
+  tau2_retail.27: 0.0
+  tau2_retail.28: 0.0
+  tau2_retail.29: 0.0
+  tau2_retail.3: 0.0
+  tau2_retail.30: 0.0
+  tau2_retail.31: 0.0
+  tau2_retail.32: 0.0
+  tau2_retail.33: 0.0
+  tau2_retail.34: 0.0
+  tau2_retail.35: 0.0
+  tau2_retail.36: 0.0
+  tau2_retail.37: 0.0
+  tau2_retail.38: 0.0
+  tau2_retail.39: 0.0
+  tau2_retail.4: 0.0
+  tau2_retail.41: 0.0
+  tau2_retail.42: 0.0
+  tau2_retail.43: 0.0
+  tau2_retail.44: 0.0
+  tau2_retail.46: 0.0
+  tau2_retail.47: 0.0
+  tau2_retail.49: 0.0
+  tau2_retail.52: 0.0
+  tau2_retail.54: 0.0
+  tau2_retail.55: 0.0
+  tau2_retail.56: 0.0
+  tau2_retail.58: 0.0
+  tau2_retail.59: 0.0
+  tau2_retail.6: 0.0
+  tau2_retail.60: 0.0
+  tau2_retail.63: 0.0
+  tau2_retail.64: 0.0
+  tau2_retail.66: 0.0
+  tau2_retail.69: 0.0
+  tau2_retail.7: 0.0
+  tau2_retail.71: 0.0
+  tau2_retail.72: 0.0
+  tau2_retail.74: 0.0
+  tau2_retail.75: 0.0
+  tau2_retail.76: 0.0
+  tau2_retail.78: 0.0
+  tau2_retail.8: 0.0
+  tau2_retail.82: 0.0
+  tau2_retail.85: 0.0
+  tau2_retail.88: 0.0
+  tau2_retail.89: 0.0
+  tau2_retail.9: 0.0
+  tau2_retail.90: 0.0
+  tau2_retail.91: 0.0
+  tau2_retail.92: 0.0
+  tau2_retail.93: 0.0
+  tau2_retail.94: 0.0
+  tau2_retail.95: 0.0
+  tau2_retail.96: 0.0
+  tau2_retail.97: 0.0
+  tau2_retail.98: 0.0
+  tau2_retail.99: 0.0
+screen_exp: tau2_screen3
+gate:
+  exp: tau2_screen3
+  rule: clean success >= 0.4 on >= 30 tasks
+  tasks_passing: 12
+  passed: false
+  runs: 516
+  stalled_runs: 212

@@ -1,0 +1,16 @@
+exp,suite,mode,runs,tasks,clean_success,utility,security_violation,stalled,parse_error,no_claims,no_steps,no_write,planned_success
+tau2_screen,tau2_retail,message,2,1,1.0,1.0,0.0,0.0,1.0,1.0,1.0,0.0,0.0
+tau2_screen,tau2_retail,state,2,1,0.0,0.0,0.0,0.0,1.0,1.0,1.0,0.0,0.0
+tau2_screen,tau2_retail,both,4,1,0.5,0.5,0.0,0.0,1.0,1.0,1.0,0.0,0.0
+tau2_screen,all,both,4,1,0.5,0.5,0.0,0.0,1.0,1.0,1.0,0.0,0.0
+tau2_screen2,tau2_retail,message,24,13,0.208,0.208,0.0,0.292,0.167,0.167,0.167,0.375,0.208
+tau2_screen2,tau2_retail,state,20,11,0.05,0.05,0.0,0.6,0.1,0.1,0.75,0.35,0.05
+tau2_screen2,tau2_retail,both,44,13,0.136,0.136,0.0,0.432,0.136,0.136,0.432,0.364,0.136
+tau2_screen2,all,both,44,13,0.136,0.136,0.0,0.432,0.136,0.136,0.432,0.364,0.136
+tau2_screen3,tau2_airline,message,52,26,0.019,0.019,0.0,0.231,0.25,0.231,0.173,0.288,0.019
+tau2_screen3,tau2_airline,state,52,26,0.019,0.019,0.0,0.404,0.25,0.231,0.462,0.327,0.0
+tau2_screen3,tau2_retail,message,206,103,0.126,0.126,0.0,0.379,0.146,0.126,0.121,0.257,0.121
+tau2_screen3,tau2_retail,state,206,103,0.083,0.083,0.0,0.49,0.121,0.107,0.461,0.301,0.039
+tau2_screen3,tau2_airline,both,104,26,0.019,0.019,0.0,0.317,0.25,0.231,0.317,0.308,0.01
+tau2_screen3,tau2_retail,both,412,103,0.104,0.104,0.0,0.434,0.133,0.117,0.291,0.279,0.08
+tau2_screen3,all,both,516,129,0.087,0.087,0.0,0.411,0.157,0.14,0.297,0.285,0.066

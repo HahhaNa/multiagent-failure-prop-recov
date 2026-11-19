@@ -1,7 +1,8 @@
 """tau2-bench screening: selection funnel, per-task clean success and the admission gate.
 
-Usage: uv run python analysis/tau2_screening.py [--exp tau2_screen]
-Writes data/tables/tau2_screening/{funnel.csv,tasks.csv,gate.json} and configs/tau2_selected.yaml.
+Usage: cd analysis && uv run python tau2_screening.py [--exp tau2_screen3]
+Writes data/tables/tau2_screening/{funnel.csv,tasks.csv,gate.json,diagnostics.csv} and configs/tau2_selected.yaml.
+diagnostics.csv also covers the stopped earlier screenings (amendment Additions 3 and 4), which are kept and not used for the gate.
 """
 
 import argparse
@@ -26,16 +27,12 @@ def _planned(calls, plan) -> bool:
     return bool(calls) and all(c.get("step_id") in steps for c in calls)
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--exp", default="tau2_screen2")
-    a = ap.parse_args()
-    out = ROOT / "data/tables/tau2_screening"
-    out.mkdir(parents=True, exist_ok=True)
-    specs = yaml.safe_load((ROOT / "configs/tau2_candidates.yaml").read_text())
-    funnel = yaml.safe_load((ROOT / "configs/tau2_funnel.yaml").read_text())
-    df = load(a.exp)
-    df = df[df["fault"].isna()]
+EARLIER = ["tau2_screen", "tau2_screen2"]
+
+
+def _runs(exp: str) -> pd.DataFrame:
+    df = load(exp)
+    df = df[df["fault"].isna()].copy()
     df["ok"] = df["utility"].astype(bool) & ~df["security_violation"].astype(bool)
     df["stalled"] = df["stalled"].astype(bool)
     df["no_claims"] = df["findings"].map(lambda f: not (isinstance(f, dict) and f.get("claims")))
@@ -43,6 +40,33 @@ def main() -> None:
     df["parse_error"] = df["run_dir"].map(_parse_error)
     df["planned_write"] = [_planned(c, p) for c, p in zip(df["exec_calls"], df["plan_raw"])]
     df["planned_ok"] = df["ok"] & df["planned_write"]
+    df["no_write"] = df["n_writes"] == 0
+    return df
+
+
+def _diag(df: pd.DataFrame, exp: str) -> pd.DataFrame:
+    cols = {"runs": ("ok", "size"), "tasks": ("task", "nunique"), "clean_success": ("ok", "mean"), "utility": ("utility", "mean"),
+            "security_violation": ("security_violation", "mean"), "stalled": ("stalled", "mean"), "parse_error": ("parse_error", "mean"),
+            "no_claims": ("no_claims", "mean"), "no_steps": ("no_steps", "mean"), "no_write": ("no_write", "mean"),
+            "planned_success": ("planned_ok", "mean")}
+    parts = [df.groupby(["suite", "mode"]).agg(**cols).reset_index(), df.groupby("suite").agg(**cols).reset_index().assign(mode="both"),
+             df.assign(suite="all").groupby("suite").agg(**cols).reset_index().assign(mode="both")]
+    d = pd.concat(parts, ignore_index=True)
+    d.insert(0, "exp", exp)
+    return d
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--exp", default="tau2_screen3")
+    a = ap.parse_args()
+    out = ROOT / "data/tables/tau2_screening"
+    out.mkdir(parents=True, exist_ok=True)
+    specs = yaml.safe_load((ROOT / "configs/tau2_candidates.yaml").read_text())
+    funnel = yaml.safe_load((ROOT / "configs/tau2_funnel.yaml").read_text())
+    df = _runs(a.exp)
+    diag = pd.concat([_diag(_runs(e), e) for e in [*EARLIER, a.exp]], ignore_index=True)
+    diag.round(3).to_csv(out / "diagnostics.csv", index=False)
     per = df.groupby("task").agg(suite=("suite", "first"), runs=("ok", "size"), clean_success=("ok", "mean"), stalls=("stalled", "sum"),
                                  parse_errors=("parse_error", "sum"), planned_successes=("planned_ok", "sum"),
                                  tokens=("prompt_tokens", "mean"), writes=("n_writes", "mean")).reset_index()

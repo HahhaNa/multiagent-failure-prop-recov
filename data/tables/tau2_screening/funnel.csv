@@ -1,0 +1,4 @@
+suite,tasks,with_action_calls,gold_replay_passes,with_critical_fact,screened,complete_4_runs,success_ge_0.4,success_ge_0.5,success_1.0,mean_clean_success,mean_success_message,mean_success_state
+tau2_retail,114,107,107,103,103,103,12,12,3,0.104,0.126,0.083
+tau2_airline,50,27,27,26,26,26,0,0,0,0.019,0.019,0.019
+all,164,134,134,129,129,129,12,12,3,0.087,0.105,0.07
