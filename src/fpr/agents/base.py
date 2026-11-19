@@ -101,10 +101,18 @@ class Ctx:
         return resp
 
 
-def policy_suffix(ctx: Ctx) -> str:
+PLANNER_ROLE = (
+    " The policy is written for the whole team. You only write the plan: you cannot call action tools yourself, "
+    "so put every action the task needs into a plan step."
+)
+
+
+def policy_suffix(ctx: Ctx, agent: str = "") -> str:
     """Domain policy of the benchmark, if it has one (tau2); appended to planner and executor system prompts."""
     p = getattr(ctx.env, "policy", "")
-    return f"\n\nDomain policy. Follow it; do not plan or take an action it forbids.\n{p}" if p else ""
+    if not p:
+        return ""
+    return f"\n\nDomain policy. Follow it; do not plan or take an action it forbids.{PLANNER_ROLE if agent == 'planner' else ''}\n{p}"
 
 
 def assistant_msg(resp: ChatResponse) -> dict:

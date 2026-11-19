@@ -130,3 +130,17 @@ median 4, 90th percentile 9 in retail). AgentDojo runs are unaffected (no overri
 `tau2_screen` was started with the old limit and stopped after 4 finished runs; it and `tau2_smoke` are kept and
 not used. The screening of T6 is `tau2_screen2`. Reported with the gate: the share of runs with a findings or
 plan parse error.
+
+## Addition 4 (2026-11-18, after 40 finished runs of `tau2_screen2`, all retail tasks 0–17; then stopped)
+
+Observation from the event logs: in state mode the planner reads the findings, then calls the action tool itself
+with the arguments it should have planned, gets `ToolNotFoundError` twice, reaches its 3-turn limit and outputs an
+empty plan (0 plan steps in 17 of 19 state-mode runs; 1 of 21 in message mode apart from runs with empty
+findings). The policy text addresses "the agent" and tells it to make tool calls, and the policy suffix did not say
+that the planner only plans. Change (τ² only, AgentDojo prompts unchanged): the planner's policy suffix adds "The
+policy is written for the whole team. You only write the plan: you cannot call action tools yourself, so put every
+action the task needs into a plan step." Nothing else changes. `tau2_screen2` (stopped, partial) is kept and
+its numbers are reported next to the final ones. The screening of T6 is `tau2_screen3`. This is the last prompt
+change before the gate: whatever `tau2_screen3` gives is the gate result.
+Also seen and left unchanged: in 6 of 40 runs the researcher's findings list every attribute of every item and
+still hit the 3,072-token limit (reported as parse errors).
