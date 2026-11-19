@@ -40,6 +40,7 @@ class EpisodeConfig:
     model: str = "mock"
     temperature: float = 0.3
     max_tokens: int = 1024
+    max_tokens_guided: int | None = None
     version: str = "v1.2.2"
     turns: dict = field(default_factory=lambda: {"researcher": 8, "planner": 3, "executor": 10})
     clock: dict = field(default_factory=lambda: {"stage_timeout_s": 300})
@@ -73,7 +74,7 @@ class Episode:
         self.ctx = Ctx(
             env=self.env, bb=self.bb, log=self.log, clock=self.clock, llm=self.llm, model=c.model,
             temperature=c.temperature, ref_seed=c.ref_seed, branch_seed=c.branch_seed, max_tokens=c.max_tokens,
-            expect_replay=c.expect_replay, single_tool_calls=c.single_tool_calls,
+            expect_replay=c.expect_replay, single_tool_calls=c.single_tool_calls, max_tokens_guided=c.max_tokens_guided,
         )
         self.inj = Injector(c.spec, self.fault, self.ctx)
         self.artifacts: dict = {}

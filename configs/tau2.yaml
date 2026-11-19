@@ -1,0 +1,3 @@
+# Overrides of configs/phase1.yaml for tau2-bench runs (docs/amendment_tau2.md, Addition 3).
+benchmark_version: tau2-2.0.0+c06b07d
+max_tokens_guided: 3072

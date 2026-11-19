@@ -188,7 +188,7 @@ class Runner:
                 spec=self.specs[r.task], mode=r.mode, fault_id=r.fault, ref_seed=r.ref_seed, branch_seed=r.branch_seed,
                 model=self.model_name, temperature=c["temperature"], max_tokens=c["max_tokens"], version=c["benchmark_version"],
                 turns=c["turns"], clock=c["clock"], tool_output_chars=c["tool_output_chars"], expect_replay=r.fault is not None,
-                single_tool_calls=self.single_tool_calls, verify=self.verify,
+                single_tool_calls=self.single_tool_calls, verify=self.verify, max_tokens_guided=c.get("max_tokens_guided"),
             )
             if r.recover_from:
                 ec.fault_id, ec.expect_replay = None, False
@@ -296,10 +296,13 @@ def main() -> None:
     ap.add_argument("--task-set", default="selected", choices=["selected", "wide"])
     ap.add_argument("--tasks", default="configs/tasks_candidates.yaml", help="task specs, relative to the repo root")
     ap.add_argument("--selected", default="configs/tasks_selected.yaml", help="selection file, relative to the repo root")
+    ap.add_argument("--overrides", default="", help="yaml of config overrides for a benchmark, relative to the repo root")
     ap.add_argument("--src", default="main", help="restart: faulted experiment to recover")
     ap.add_argument("--prefix-seed", type=int, default=1, help="prefix: reference seed whose prefix the branches replay")
     a = ap.parse_args()
     cfg = load_cfg()
+    if a.overrides:
+        cfg.update(yaml.safe_load((ROOT / a.overrides).read_text()))
     root = runs_root(cfg)
     if a.mock:
         root = root / "mock"

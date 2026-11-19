@@ -33,6 +33,7 @@ class Ctx:
     ref_seed: int
     branch_seed: int
     max_tokens: int
+    max_tokens_guided: int | None = None  # cap for structured outputs (findings, plan); None = max_tokens
     branched: bool = False
     expect_replay: bool = False
     single_tool_calls: bool = False  # chat template accepts one tool call per assistant turn
@@ -68,7 +69,7 @@ class Ctx:
             response_format=response_format,
             temperature=self.temperature,
             seed=seed,
-            max_tokens=self.max_tokens,
+            max_tokens=(self.max_tokens_guided or self.max_tokens) if response_format else self.max_tokens,
         )
         resp = await self.llm.chat(req, {"agent": agent, "mode": "guided" if response_format else "tools"})
         for tc in resp.tool_calls:

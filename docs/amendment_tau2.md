@@ -117,3 +117,16 @@ field names of nested objects, taken from the tool's own JSON schema) to the fir
 The same description is used for every agent. No agent prompt or shared harness code is changed for this.
 Also fixed here: the Phase 1 implausible perturbation of a number (×100) leaves 0 unchanged; for τ² specs an
 unchanged numeric value is replaced by 9999.
+
+## Addition 3 (2026-11-18, after 4 smoke runs and 4 finished screening runs; no success rate was used)
+
+Observation, from the event logs of `tau2_smoke` (retail task 0, 4 runs): in 4 of 4 runs the researcher's findings
+JSON ended with `finish_reason = length` at the Phase 1 limit of 1,024 completion tokens, failed to parse and was
+replaced by empty findings; the plan was then empty and the executor solved the task alone. The same request
+with a higher limit completes at 1,088 tokens (20 claims). τ² records carry more values per task than AgentDojo.
+Change: structured outputs (findings, plan, verifier JSON) get `max_tokens_guided = 3072` on τ² runs
+(`configs/tau2.yaml`); tool-loop turns keep 1,024; turn limits are unchanged (gold read calls per candidate task:
+median 4, 90th percentile 9 in retail). AgentDojo runs are unaffected (no override, same requests).
+`tau2_screen` was started with the old limit and stopped after 4 finished runs; it and `tau2_smoke` are kept and
+not used. The screening of T6 is `tau2_screen2`. Reported with the gate: the share of runs with a findings or
+plan parse error.
