@@ -10,9 +10,7 @@ $R advtc
 $R base --src a2_nodef --method nodef
 $R base --src advtc_nodef --method nodef
 $R base --src main_h2 --method nodef --seeds 100,101
-$R base --src adv_nodef --method causalarmor
 for d in spotlight repeat toolfilter promptarmor pidetector ipiguard; do
   $R base --src adv_nodef --method "$d"
 done
-$R base --src main_h2 --method causalarmor --seeds 100,101
 echo QUEUE_A_DONE

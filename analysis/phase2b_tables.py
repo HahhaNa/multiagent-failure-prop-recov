@@ -38,9 +38,12 @@ def load(exp: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+EXP_SUFFIX = {"causalarmor": "_u80"}  # Amendment 12: CausalArmor rerun in its own phase at gpu-memory-utilization 0.80
+
+
 def method_runs(src: str, m: str) -> pd.DataFrame:
     kind = "gate" if m.startswith("ccg") else "base"
-    return load(f"{kind}_{m}_{src}")
+    return load(f"{kind}_{m}_{src}{EXP_SUFFIX.get(m, '')}")
 
 
 def boot(df: pd.DataFrame, col: str, cluster: str = "cluster") -> tuple[float, float, float]:

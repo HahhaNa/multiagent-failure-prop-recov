@@ -1,5 +1,6 @@
-cond,n_attack,n_benign,BU,UA,ASR,detect_attack,flag_benign,errors,selected,delta_ASR_vs_official,agreement_vs_official,passes
+cond,n_attack,n_benign,BU,UA,ASR,detect_attack,flag_benign,errors,selected,delta_ASR_vs_official,passes,agreement_vs_official
 nodef,249,37,0.5405,0.3454,0.4418,0.0,0.0,0,v2 (fails),,,
 official,249,37,0.5135,0.2771,0.0843,0.5261,0.0541,0,v2 (fails),,,
-v1,249,37,0.5135,0.3012,0.1446,0.3936,0.027,0,v2 (fails),0.0602,0.6988,False
-v2,249,37,0.3784,0.257,0.0643,0.5382,0.2432,0,v2 (fails),-0.0201,0.747,False
+v1,249,37,0.5135,0.3012,0.1446,0.3936,0.027,0,v2 (fails),0.0602,False,0.6988
+v2,249,37,0.3784,0.257,0.0643,0.5382,0.2432,0,v2 (fails),-0.0201,False,0.747
+v2m,249,37,0.4324,0.2811,0.0683,0.5743,0.1622,0,v2 (fails),-0.0161,False,0.751
