@@ -264,8 +264,8 @@ async def masked(base: Base, llm, src: Traj, seed: int, extra: dict[str, str] | 
     return Traj(log.events, report, [], {"findings": findings, "plan": plan})
 
 
-def writes_of(t: Traj) -> set[str]:
-    return {w.sig for w in pending(t.events)}
+def writes_of(t: Traj, masked: bool = False) -> set[str]:
+    return {w.msig if masked else w.sig for w in pending(t.events)}
 
 
 def copy_events(events: list[dict]) -> list[dict]:

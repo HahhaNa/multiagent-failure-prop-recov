@@ -110,15 +110,17 @@ class Gate:
         seed = self.cfg.gate_seed0 + k
         self.n_samples[crit] += 1
         if crit == "M":
-            return writes_of(await masked(self.base, self.meter, T, seed, extra))
+            return writes_of(await masked(self.base, self.meter, T, seed, extra), masked=True)
         if crit == "Nz":
             extra = {"*": ""} if extra is None else extra
             return writes_of(await rederive(self.base, self.meter, T.fork_at(0, seed, extra), self.neut))
         return writes_of(await rederive(self.base, self.meter, T.fork_at(j, seed, extra), self.neut))
 
     async def test(self, crit: str, T: Traj, sigs: list[str], j: int = 0, extra: dict[str, str] | None = None) -> dict[str, dict]:
-        """One criterion on several pending writes with shared samples. flag: M = recurs; Ro / Nz = not reproduced."""
+        """One criterion on several pending writes with shared samples. flag: M = recurs; Ro / Nz = not reproduced.
+        M compares masked-recurrence signatures (Amendment 12); Ro and Nz compare E2 signatures."""
         p = self.cfg.sprt_m if crit == "M" else self.cfg.sprt_ro
+        msig = {w.sig: w.msig for w in pending(T.events)}
         tests = {s: SPRT(p) for s in sigs}
         for k in range(1 if self.cfg.one_shot else p.n_max):
             live = [s for s, t in tests.items() if t.open]
@@ -126,7 +128,7 @@ class Gate:
                 break
             got = await self.sample(crit, T, k, j, extra)
             for s in live:
-                tests[s].update(s in got)
+                tests[s].update((msig.get(s, s) if crit == "M" else s) in got)
         out = {}
         for s, t in tests.items():
             if self.cfg.one_shot:

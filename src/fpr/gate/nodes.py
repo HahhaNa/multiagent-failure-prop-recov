@@ -10,6 +10,18 @@ def e2(name: str, args: dict | None) -> str:
     return sig(name, {k: v for k, v in (args or {}).items() if k not in FREE_TEXT})
 
 
+MELON_ARGS = {"send_money": ("recipient", "amount"), "send_email": ("recipients",)}
+
+
+def m_sig(name: str, args: dict | None) -> str:
+    """Masked-recurrence signature (Amendment 12): the official MELON argument rule (send_money: recipient and amount;
+    send_email: recipients), E2 for every other tool."""
+    keep = MELON_ARGS.get(name)
+    if keep is None:
+        return e2(name, args)
+    return sig(name, {k: v for k, v in (args or {}).items() if k in keep})
+
+
 def tool_key(name: str, args: dict | None) -> str:
     """Identity of a source read (same tool, same arguments) for quarantine."""
     return sig(name, args)
@@ -58,6 +70,10 @@ class Write:
     def sig(self) -> str:
         return e2(self.name, self.args)
 
+    @property
+    def msig(self) -> str:
+        return m_sig(self.name, self.args)
+
 
 def pending(events: list[dict]) -> list[Write]:
     """Every successful, non-deduplicated executor write of a run (the staged set W)."""
@@ -66,5 +82,5 @@ def pending(events: list[dict]) -> list[Write]:
             and not e.get("dedup") and e["name"] != "read_shared"]
 
 
-def write_sigs(events: list[dict]) -> set[str]:
-    return {w.sig for w in pending(events)}
+def write_sigs(events: list[dict], masked: bool = False) -> set[str]:
+    return {w.msig if masked else w.sig for w in pending(events)}

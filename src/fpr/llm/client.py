@@ -109,6 +109,7 @@ class OpenAIClient:
         self.http = httpx.AsyncClient(timeout=timeout_s, limits=httpx.Limits(max_connections=concurrency + 8))
         self.revision = revision
         self._tok = None
+        self.score_sem = asyncio.Semaphore(2)  # prompt-logprob requests materialize large logits (vLLM OOM otherwise)
 
     def tokenizer(self, model: str):
         if self._tok is None:
@@ -129,7 +130,7 @@ class OpenAIClient:
         ids_p = tok(prefix, add_special_tokens=False).input_ids
         ids = ids_p + tok(render_assistant(req.assistant), add_special_tokens=False).input_ids
         body = {"model": req.model, "prompt": ids, "max_tokens": 1, "temperature": 0.0, "prompt_logprobs": 0}
-        async with self.sem:
+        async with self.score_sem, self.sem:
             waited = 0.0
             while True:
                 try:

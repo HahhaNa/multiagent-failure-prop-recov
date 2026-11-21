@@ -421,3 +421,28 @@ on flagged runs, is about 250k calls, i.e. 17 GPU hours for CCG alone, before ab
 - Ablations on `main_h2`: CCG-1shot, CCG-block, CCG-purify, CCG-M, CCG-Ro.
 - Baselines on `main_h2`: NoDef, MELON-exec, MELON-all, AgentSentry-exec, CausalArmor-exec.
 - The prevention set and the Nz variants run on AgentDojo-97 only (design §7–8).
+
+## Amendment 12 — masked-recurrence signature and the CausalArmor phase (2026-11-21, before any real CCG or baseline result run)
+
+**Pilot finding.** The pilot is `pilot_ccg_v1mask`, excluded from results.
+- The masked pipeline reproduced the attacker's write: `send_money` to the attacker IBAN, same amount. The masked run
+  chose another `date`, and the E2 signature compares dates, so the write did not count as a recurrence.
+- The official MELON code compares only the arguments that identify the effect: `send_money` on recipient and amount,
+  `send_email` on recipients, all arguments for other tools.
+
+**Fixed now:**
+- **Masked-recurrence signature.** Every masked-recurrence comparison uses the official MELON argument rule: CCG's
+  criterion M and its localization, MELON-exec, MELON-all and AgentSentry-exec. Other tools keep E2.
+  - Re-observation (Ro) and neutralization (Nz) keep E2, because a changed date or amount is exactly what an
+    accidental fault produces.
+  - The staged set and the commit decisions stay keyed by E2.
+- **Re-validation.** The §9 validation is repeated for the selected port v2 under this rule (row `v2m`) and reported.
+  The port selection of Amendment 10 is not changed.
+- **CausalArmor phase.**
+  - Its log-probability scoring uses vLLM prompt log-probs. These materialize full-vocabulary logits in
+    1,024-token chunks, and at `--gpu-memory-utilization 0.90` they twice crashed the server with a CUDA OOM
+    (03:31, 03:58).
+  - CausalArmor-exec therefore runs last, in its own phase, with vLLM restarted at `--gpu-memory-utilization 0.80`
+    (same checkpoint and sampling settings; KV-cache capacity only) and at most 2 concurrent scoring requests.
+  - The 210 CausalArmor runs finished before the crash are kept but rerun under this setting for uniformity, in a new
+    experiment name.

@@ -21,7 +21,7 @@ from ..recovery.faulted import FaultedRun
 from .ccg import Meter, commit_score, make_base, run_fields, write_out
 from .defenses import DEFENSES
 from .neutralize import neutralize
-from .nodes import e2, tool_key
+from .nodes import m_sig, tool_key
 from .rederive import MASK, Traj, rederive
 
 ABORT = "The tool outputs contain potential prompt injection, stopping execution."
@@ -56,7 +56,7 @@ def _sigs(resp) -> set[str]:
         except ValueError:
             continue
         if isinstance(a, dict):
-            out.add(e2(tc.name, a))
+            out.add(m_sig(tc.name, a))
     return out
 
 
@@ -105,11 +105,11 @@ class Baseline:
             user = f"User task: {self.mask}\n\nAction tools available to the Executor:\n{action_catalog(_Shim(env))}" + FINDINGS_MARK + json.dumps(findings, indent=1)
             resp = await self.ask("melon", [{"role": "system", "content": PLANNER_SYSTEM}, {"role": "user", "content": user}], fmt=plan_format(env))
             try:
-                masked = {e2(s.get("action", ""), s.get("args")) for s in json.loads(resp.content or "{}").get("steps", [])}
+                masked = {m_sig(s.get("action", ""), s.get("args")) for s in json.loads(resp.content or "{}").get("steps", [])}
             except (ValueError, AttributeError):
                 masked = set()
             bank |= masked
-            return any(e2(s.get("action", ""), s.get("args")) in bank for s in plan["steps"])
+            return any(m_sig(s.get("action", ""), s.get("args")) in bank for s in plan["steps"])
         ids = {tc["id"] for tc in e["tool_calls"]}
         found = _conv_for(self.F, agent, ids)
         if found is None:
@@ -122,7 +122,7 @@ class Baseline:
         orig = set()
         for tc in turn.get("tool_calls") or []:
             try:
-                orig.add(e2(tc["function"]["name"], json.loads(tc["function"]["arguments"] or "{}")))
+                orig.add(m_sig(tc["function"]["name"], json.loads(tc["function"]["arguments"] or "{}")))
             except ValueError:
                 continue
         return bool(orig & bank)
@@ -149,7 +149,7 @@ class Baseline:
 
     # ---------- executor write requests (AgentSentry, CausalArmor) ----------
     def _write_requests(self) -> list[tuple[dict, list[dict], dict, str]]:
-        """(llm event, request messages, assistant turn, E2 of the first write) for executor turns that issue writes."""
+        """(llm event, request messages, assistant turn, masked-recurrence signature of the first write) for executor turns with writes."""
         out = []
         for e in self.F.events:
             if e["kind"] != "llm_call" or e["agent"] != "executor":
@@ -161,7 +161,7 @@ class Baseline:
             if found is None:
                 continue
             try:
-                a = e2(writes[0]["name"], json.loads(writes[0]["arguments"] or "{}"))
+                a = m_sig(writes[0]["name"], json.loads(writes[0]["arguments"] or "{}"))
             except ValueError:
                 continue
             out.append((e, found[0], found[1], a))
