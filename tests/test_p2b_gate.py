@@ -169,3 +169,30 @@ def test_gate_matrix_resume(specs, cached, tmp_path):
     (runs[0].path(root) / "DONE").write_text("x")
     assert sum((r.path(root) / "DONE").exists() for r in runs) == 1
     assert json.loads((root / "src" / KEY / "message" / "B2_P_b100" / "summary.json").read_text())["injected"]
+
+
+# 9. every baseline runs end to end; executor-level counterfactual baselines see E.tool but not a laundered plan step
+def test_baselines_end_to_end(specs, cached, tmp_path):
+    from fpr.gate.baselines import COUNTERFACTUAL, run_baseline
+    from fpr.gate.defenses import DEFENSES
+
+    res = {}
+    for fault in ("B1_Et", "B2_P", "CLEAN_Rout"):
+        F = _F(specs, cached, tmp_path / fault, KEY, "message", fault)
+        for m in (*COUNTERFACTUAL, *DEFENSES):
+            res[fault, m] = asyncio.run(run_baseline(m, F, specs[KEY], RUN, cached, tmp_path / f"{fault}_{m}"))
+    assert all(res["B1_Et", m]["flagged"] and not res["B1_Et", m]["security_violation"] for m in COUNTERFACTUAL)
+    assert all(not res["B2_P", m]["flagged"] and res["B2_P", m]["security_violation"] for m in COUNTERFACTUAL)
+    assert not any(res["CLEAN_Rout", m]["flagged"] for m in (*COUNTERFACTUAL, *DEFENSES))
+    assert all(res["CLEAN_Rout", m]["utility"] for m in (*COUNTERFACTUAL, *DEFENSES))
+
+
+def test_config_matches_code():
+    import yaml
+
+    from fpr.env.agentdojo_adapter import ROOT
+    from fpr.gate.ccg import RO
+
+    c = yaml.safe_load((ROOT / "configs/phase2b.yaml").read_text())
+    assert c["sprt_reobserve"] == {k: getattr(RO, k) for k in c["sprt_reobserve"]}
+    assert c["sprt_mask"] == {k: getattr(M, k) for k in c["sprt_mask"]}

@@ -42,6 +42,7 @@ class Ctx:
     transcripts: dict[str, list[list[dict]]] = field(default_factory=dict)
     before_chat: Callable[[str, bool], None] | None = None  # Phase 2b: fork hook, called with (agent, guided)
     meta: dict = field(default_factory=dict)  # extra request metadata (not part of the cache key)
+    defense: Any = None  # Phase 2b prevention baseline (fpr.gate.defenses.Defense)
 
     def _record_transcript(self, agent: str, messages: list[dict], resp: ChatResponse) -> None:
         """Keep each distinct conversation once, extended in place as it grows."""
@@ -155,8 +156,11 @@ async def run_call(
     writes: list[str] = []
     skipped = False
     blocked = await guard(tc.name, args) if guard is not None and err is None and tc.name in ctx.env.write_labels else None
+    fake = ctx.defense.fake(agent, tc.name, args) if ctx.defense is not None and err is None and tc.name in ctx.env.write_labels else None
     if err:
         result = err
+    elif fake is not None:
+        result, err = fake, "faked_by_defense"
     elif blocked is not None:
         result, err = f"Blocked by verifier: {blocked}", "blocked_by_verifier"
     elif dedup is not None and tc.name in ctx.env.write_labels and dedup(tc.name, args):
@@ -176,6 +180,8 @@ async def run_call(
         result = on_return(tc.name, args, result)
         if inspect.isawaitable(result):
             result = await result
+    if ctx.defense is not None and tc.name != "read_shared":
+        result = await ctx.defense.tool_text(ctx, agent, tc.name, args, result)
     ev = {
         "agent": agent,
         "call_id": tc.id,
@@ -218,4 +224,6 @@ async def tool_loop(
             if ctx.single_tool_calls:
                 messages.append(assistant_msg(resp.model_copy(update={"tool_calls": [tc], "content": resp.content if k == 0 else ""})))
             messages.append(await run_call(ctx, agent, tc, allowed, on_return, on_args, guard, dedup))
+        if ctx.defense is not None:
+            messages.extend(ctx.defense.after_tools(agent, messages))
     return None, messages

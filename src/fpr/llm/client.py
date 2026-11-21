@@ -46,6 +46,40 @@ class LLM(Protocol):
     async def chat(self, req: ChatRequest, meta: dict) -> ChatResponse: ...
 
 
+class ScoreRequest(BaseModel):
+    """Log-probability of an assistant turn given a conversation (CausalArmor-style attribution, Phase 2b)."""
+
+    model: str
+    messages: list[dict[str, Any]]
+    tools: list[dict[str, Any]] | None = None
+    assistant: dict[str, Any]
+
+    def key(self) -> str:
+        blob = json.dumps({"score": self.model_dump()}, sort_keys=True, separators=(",", ":"), default=str)
+        return hashlib.sha1(blob.encode()).hexdigest()
+
+
+class ScoreResponse(BaseModel):
+    logprob: float
+    n_tokens: int = 0
+    prompt_tokens: int = 0
+    replayed: bool = False
+
+
+def render_assistant(a: dict[str, Any]) -> str:
+    """Fixed text form of an assistant tool-call turn (hermes format); the same form is scored under every ablation."""
+    parts = [a.get("content") or ""]
+    for tc in a.get("tool_calls") or []:
+        f = tc["function"]
+        args = f.get("arguments")
+        try:
+            args = json.loads(args) if isinstance(args, str) else args
+        except ValueError:
+            pass
+        parts.append("<tool_call>\n" + json.dumps({"name": f["name"], "arguments": args}) + "\n</tool_call>")
+    return "\n".join(p for p in parts if p) + "<|im_end|>"
+
+
 def alnum9_ids(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Rewrite tool call ids to 9 alphanumeric chars (required by Mistral chat templates); deterministic per id."""
     h = lambda s: hashlib.sha1(s.encode()).hexdigest()[:9]
@@ -62,12 +96,44 @@ def alnum9_ids(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 class OpenAIClient:
     def __init__(self, base_url: str = "http://127.0.0.1:8000/v1", concurrency: int = 64, timeout_s: float = 900, alnum9: bool = False,
-                 thinking_flag: bool = True):
+                 thinking_flag: bool = True, revision: str | None = None):
         self.base_url = base_url.rstrip("/")
         self.alnum9 = alnum9
         self.thinking_flag = thinking_flag  # send the Qwen3 enable_thinking=False template kwarg
         self.sem = asyncio.Semaphore(concurrency)
         self.http = httpx.AsyncClient(timeout=timeout_s, limits=httpx.Limits(max_connections=concurrency + 8))
+        self.revision = revision
+        self._tok = None
+
+    def tokenizer(self, model: str):
+        if self._tok is None:
+            from transformers import AutoTokenizer
+
+            self._tok = AutoTokenizer.from_pretrained(model, revision=self.revision, local_files_only=True)
+        return self._tok
+
+    async def score(self, req: ScoreRequest, meta: dict) -> ScoreResponse:
+        tok = self.tokenizer(req.model)
+        msgs = []
+        for m in req.messages:  # chat templates expect tool-call arguments as objects
+            m = dict(m)
+            if m.get("tool_calls"):
+                m["tool_calls"] = [{**tc, "function": {**tc["function"], "arguments": _obj(tc["function"].get("arguments"))}} for tc in m["tool_calls"]]
+            msgs.append(m)
+        prefix = tok.apply_chat_template(msgs, tools=req.tools, add_generation_prompt=True, tokenize=False, enable_thinking=False)
+        ids_p = tok(prefix, add_special_tokens=False).input_ids
+        ids = ids_p + tok(render_assistant(req.assistant), add_special_tokens=False).input_ids
+        body = {"model": req.model, "prompt": ids, "max_tokens": 1, "temperature": 0.0, "prompt_logprobs": 0}
+        async with self.sem:
+            r = await self.http.post(f"{self.base_url}/completions", json=body)
+            r.raise_for_status()
+            data = r.json()
+        plp = data["choices"][0]["prompt_logprobs"]
+        lp = 0.0
+        for t in range(len(ids_p), len(ids)):
+            e = plp[t] or {}
+            lp += float((e.get(str(ids[t])) or next(iter(e.values()), {"logprob": 0.0}))["logprob"])
+        return ScoreResponse(logprob=lp, n_tokens=len(ids) - len(ids_p), prompt_tokens=len(ids))
 
     async def chat(self, req: ChatRequest, meta: dict) -> ChatResponse:
         body: dict[str, Any] = {
@@ -117,3 +183,10 @@ class OpenAIClient:
 
     async def aclose(self) -> None:
         await self.http.aclose()
+
+
+def _obj(x):
+    try:
+        return json.loads(x) if isinstance(x, str) else x
+    except ValueError:
+        return x

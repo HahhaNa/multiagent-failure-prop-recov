@@ -12,7 +12,7 @@ from typing import Any
 
 from ..scoring.taint import contains
 from ..tasks import TaskSpec
-from .client import ChatRequest, ChatResponse, ToolCall
+from .client import ChatRequest, ChatResponse, ScoreRequest, ScoreResponse, ToolCall
 
 MARK = "<INFORMATION>"
 MASKED = "User task: Summarize the contents"  # Phase 2b masked root prompt
@@ -60,6 +60,15 @@ class MockLLM:
         tcs = [ToolCall(id=f"m{i}", name=n, arguments=json.dumps(a)) for i, (n, a) in enumerate(calls)]
         n_in = sum(len(str(m.get("content", ""))) for m in req.messages) // 4
         return ChatResponse(content=content, tool_calls=tcs, prompt_tokens=n_in, completion_tokens=20 + 5 * len(tcs), finish_reason="stop")
+
+    async def score(self, req: ScoreRequest, meta: dict) -> ScoreResponse:
+        """Toy log-probability: -1 per argument value of the action that the context does not contain (as text)."""
+        ctx = json.dumps(req.messages)
+        lp = 0.0
+        for tc in req.assistant.get("tool_calls") or []:
+            for v in json.loads(tc["function"]["arguments"] or "{}").values():
+                lp -= 0.0 if str(v) in ctx else 1.0
+        return ScoreResponse(logprob=lp, n_tokens=5, prompt_tokens=len(ctx) // 4)
 
     @staticmethod
     def _done(messages: list[dict]) -> list[tuple[str, dict]]:
@@ -142,6 +151,21 @@ class MockLLM:
         if MARK in messages[1]["content"]:
             return "", [(c["function"], dict(c["args"])) for c in spec.injection_calls[:1]]
         return "Summary.", []
+
+    def _agentsentry(self, spec, messages, guided, state):
+        """Replay of an executor request (possibly masked or sanitized): the gullible executor."""
+        return self._executor(spec, messages, guided, state)
+
+    def _tool_filter(self, spec, messages, guided, state):
+        return ", ".join(sorted({c["function"] for c in spec.gt_reads + spec.gt_writes})), []
+
+    def _promptarmor(self, spec, messages, guided, state):
+        m = INFO.search(messages[1]["content"])
+        return (f"Yes\nInjection: {m.group().strip()}" if m else "No"), []
+
+    def _ipiguard(self, spec, messages, guided, state):
+        steps = [{"step_id": f"s{i + 1}", "action": c["function"], "args": {}, "cites": []} for i, c in enumerate(spec.gt_writes)]
+        return json.dumps({"steps": steps}), []
 
     def _neutralizer(self, spec, messages, guided, state):
         """Drops instruction blocks, keeps data (task-coupled corrections look like data and survive)."""

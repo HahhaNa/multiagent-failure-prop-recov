@@ -26,15 +26,19 @@ FINAL = (
 async def research(ctx: Ctx, max_turns: int, on_return: ToolHook | None = None) -> Findings:
     from .planner import action_catalog
 
-    messages = [{"role": "system", "content": SYSTEM.format(catalog=action_catalog(ctx))}, {"role": "user", "content": f"User task: {ctx.env.prompt}"}]
+    system = SYSTEM.format(catalog=action_catalog(ctx))
+    if ctx.defense is not None:
+        system = ctx.defense.system("researcher", system)
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": f"User task: {ctx.env.prompt}"}]
     return await research_from(ctx, messages, max_turns, on_return)
 
 
 async def research_from(ctx: Ctx, messages: list[dict], turns: int, on_return: ToolHook | None = None) -> Findings:
     """Continue a researcher conversation for up to `turns` tool turns, then ask for findings (Phase 2 reuses it mid-run)."""
-    tools = ctx.env.tool_schemas(ctx.env.read_tools)
+    names = ctx.defense.tools("researcher", ctx.env.read_tools) if ctx.defense is not None else ctx.env.read_tools
+    tools = ctx.env.tool_schemas(names)
     if turns > 0:
-        _, messages = await tool_loop(ctx, "researcher", messages, tools, ctx.env.read_tools, turns, on_return=on_return)
+        _, messages = await tool_loop(ctx, "researcher", messages, tools, names, turns, on_return=on_return)
     messages.append({"role": "user", "content": FINAL})
     resp = await ctx.chat("researcher", messages, response_format=json_schema_format(Findings, "findings"))
     try:

@@ -51,6 +51,8 @@ async def execute(
 ) -> str | None:
     """only_steps restricts execution to the given step ids (Phase 2); context is appended to the task (Phase 2b masked run)."""
     names = ctx.env.read_tools + list(ctx.env.write_labels)
+    if ctx.defense is not None:
+        names = ctx.defense.tools("executor", names)
     tools = with_step_id(ctx.env.tool_schemas(names))
     task = f"User task: {ctx.env.prompt}"
     if context:
@@ -66,7 +68,8 @@ async def execute(
             task += f" Execute only steps {only_steps}."
         tools.append(READ_SHARED)
         names = names + ["read_shared"]
-    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": task}]
+    system = ctx.defense.system("executor", SYSTEM) if ctx.defense is not None else SYSTEM
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": task}]
     start = len(ctx.log.events)
     report, messages = await tool_loop(ctx, "executor", messages, tools, names, max_turns, on_return=on_return, on_args=on_args, guard=guard, dedup=dedup)
     steps = [s.get("step_id") for s in (plan_json or {}).get("steps", [])] if isinstance(plan_json, dict) else []

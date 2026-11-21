@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from .client import LLM, ChatRequest, ChatResponse
+from .client import LLM, ChatRequest, ChatResponse, ScoreRequest, ScoreResponse
 
 
 class CacheMiss(RuntimeError):
@@ -55,6 +55,23 @@ class CachedLLM:
         resp = await self.inner.chat(req, meta)
         self.live_calls += 1
         self.cache.put(key, resp)
+        return resp
+
+
+    async def score(self, req: ScoreRequest, meta: dict) -> ScoreResponse:
+        key = req.key()
+        p = self.cache._path(key)
+        if self.mode != "live" and p.exists():
+            self.replayed_calls += 1
+            return ScoreResponse.model_validate_json(p.read_text()).model_copy(update={"replayed": True})
+        if self.mode == "replay":
+            raise CacheMiss(key)
+        resp = await self.inner.score(req, meta)
+        self.live_calls += 1
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(f".tmp{os.getpid()}{id(resp)}")
+        tmp.write_text(resp.model_dump_json())
+        os.replace(tmp, p)
         return resp
 
 

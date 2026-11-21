@@ -48,6 +48,7 @@ class EpisodeConfig:
     single_tool_calls: bool = False
     verify: bool = False  # R3 verify-all mode
     prior_effects: list[dict] | None = None  # R1: external effects of the faulted run, re-applied first
+    defense: str | None = None  # Phase 2b prevention baseline (fpr.gate.defenses.DEFENSES)
 
 
 @dataclass
@@ -78,6 +79,10 @@ class Episode:
             expect_replay=c.expect_replay, single_tool_calls=c.single_tool_calls, meta={"task": c.spec.key},
         )
         self.inj = Injector(c.spec, self.fault, self.ctx)
+        if c.defense:
+            from .gate.defenses import make_defense
+
+            self.ctx.defense = make_defense(c.defense)
         self.artifacts: dict = {}
         for n, e in enumerate(c.prior_effects or []):
             err = self.env.apply_prior(e["tool"], e["args"], n)
@@ -125,6 +130,8 @@ class Episode:
         report, error = None, None
         self.log.emit("episode_start", {"task": c.spec.key, "mode": mode, "fault": c.fault_id, "ref_seed": c.ref_seed, "branch_seed": c.branch_seed})
         try:
+            if self.ctx.defense is not None:
+                await self.ctx.defense.setup(self.ctx)
             findings = await self._researcher()
             findings = self.inj.r_out(findings)
             fj = as_json(findings)

@@ -448,7 +448,7 @@ def make_llm(args, cfg, specs):
         return CachedLLM(MockLLM(specs), cache, "record"), "mock"
     client = OpenAIClient(
         base_url=m.get("base_url", "http://127.0.0.1:8000/v1"), concurrency=m.get("concurrency", cfg["concurrency"]),
-        alnum9=m.get("tool_call_ids") == "alnum9", thinking_flag=m.get("thinking_flag", True),
+        alnum9=m.get("tool_call_ids") == "alnum9", thinking_flag=m.get("thinking_flag", True), revision=m.get("revision"),
     )
     return CachedLLM(client, cache, "record"), m["repo"]
 
