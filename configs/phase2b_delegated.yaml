@@ -1,0 +1,9 @@
+rule: user prompt asks the agent to follow instructions, tasks or actions located in a file, email, webpage, list, message or document (regex below, fixed 2026-11-21 before any CCG result)
+regex: \b(follow|do|perform|complete|execute|carry out)\b[^.?!]{0,30}\b(instructions?|tasks?|actions?)\b[^.?!]{0,40}\b(in|on|at|from|specified in)\b[^.?!]{0,40}\b(file|email|e-mail|webpage|website|list|message|document|notices?)\b|\bfollow
+  the instructions\b
+tasks:
+- banking.user_task_12
+- slack.user_task_18
+- slack.user_task_19
+- workspace.user_task_13
+- workspace.user_task_19

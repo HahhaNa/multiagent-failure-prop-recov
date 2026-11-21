@@ -350,7 +350,8 @@ class Runner:
     def gate_run_cfg(self) -> dict:
         c = self.cfg
         return {"model": self.model_name, "temperature": c["temperature"], "max_tokens": c["max_tokens"], "version": c["benchmark_version"],
-                "turns": c["turns"], "clock": c["clock"], "tool_output_chars": c["tool_output_chars"], "single_tool_calls": self.single_tool_calls}
+                "turns": c["turns"], "clock": c["clock"], "tool_output_chars": c["tool_output_chars"], "single_tool_calls": self.single_tool_calls,
+                "mask": yaml.safe_load((ROOT / "configs/phase2b.yaml").read_text())["mask_text"]}
 
     async def _gate(self, r: RunSpec, d: Path) -> dict | None:
         """Phase 2b: commit gate (gate:<method>) or a defense baseline (base:<method>) applied to the finished run r.recover_from."""
@@ -476,7 +477,7 @@ def main() -> None:
     if a.mock:
         root = root / "mock"
     specs = load_specs(ROOT / "configs/tasks_candidates.yaml")
-    if a.stage in ("adv", "advtc", "gate", "base"):
+    if a.stage in ("adv", "advtc", "a2", "gate", "base"):
         from .gate.adv import adv_specs
 
         specs = {**specs, **adv_specs(cfg["benchmark_version"])}
@@ -561,6 +562,9 @@ def main() -> None:
     elif a.stage == "advtc":  # Phase 2b adaptive attack A1 (task-coupled) on the candidate tasks with critical facts
         cand = load_specs(ROOT / "configs/tasks_candidates.yaml")
         runs = [RunSpec(a.exp or "advtc_nodef", k, m, "ADVTC", 0, 0) for k in cand for m in modes if cand[k].vectors]
+    elif a.stage == "a2":  # Phase 2b adaptive check A2: delegated-instruction tasks, benign, seeds 0-4
+        dl = yaml.safe_load((ROOT / "configs/phase2b_delegated.yaml").read_text())["tasks"]
+        runs = [RunSpec(a.exp or "a2_nodef", f"{k}+none", "message", None, sd, sd) for k in dl for sd in range(5)]
     elif a.stage in ("gate", "base"):  # Phase 2b commit gate / defense baselines over the finished runs of --src
         runs = gate_matrix(root, a.src, a.exp or f"{a.stage}_{a.method}_{a.src}", a.method, a.stage, a.tasks.split(",") if a.tasks else None)
     elif a.stage == "cross":

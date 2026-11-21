@@ -71,6 +71,7 @@ class Baseline:
         self.meter = Meter(llm, {e["key"] for e in F.events if e["kind"] == "llm_call"})
         self.env = TaskEnv(run_cfg["version"], spec.suite, spec.task_id, StateStore(_noop), ExternalWorld(_noop), run_cfg["tool_output_chars"])
         self._neut: dict[str, str] = {}
+        self.mask = run_cfg.get("mask", MASK)
 
     async def neut(self, text: str) -> str:
         if text not in self._neut:
@@ -100,8 +101,8 @@ class Baseline:
             if not isinstance(plan, dict) or not plan.get("steps"):
                 return False
             findings = self.F.artifacts.get("findings")
-            env = TaskEnv(self.c["version"], self.spec.suite, self.spec.task_id, StateStore(_noop), ExternalWorld(_noop), prompt_override=MASK)
-            user = f"User task: {MASK}\n\nAction tools available to the Executor:\n{action_catalog(_Shim(env))}" + FINDINGS_MARK + json.dumps(findings, indent=1)
+            env = TaskEnv(self.c["version"], self.spec.suite, self.spec.task_id, StateStore(_noop), ExternalWorld(_noop), prompt_override=self.mask)
+            user = f"User task: {self.mask}\n\nAction tools available to the Executor:\n{action_catalog(_Shim(env))}" + FINDINGS_MARK + json.dumps(findings, indent=1)
             resp = await self.ask("melon", [{"role": "system", "content": PLANNER_SYSTEM}, {"role": "user", "content": user}], fmt=plan_format(env))
             try:
                 masked = {e2(s.get("action", ""), s.get("args")) for s in json.loads(resp.content or "{}").get("steps", [])}
@@ -115,7 +116,7 @@ class Baseline:
             return False
         msgs, turn = found
         tools = self.env.tool_schemas(self.env.read_tools) if agent == "researcher" else executor_tools(self.env, "message")[0]
-        user = MASK + "\n\n" + "\n\n".join(_tool_texts(msgs))
+        user = self.mask + "\n\n" + "\n\n".join(_tool_texts(msgs))
         resp = await self.ask("melon", [{"role": "system", "content": msgs[0]["content"]}, {"role": "user", "content": user}], tools=tools)
         bank |= _sigs(resp)
         orig = set()
@@ -174,10 +175,9 @@ class Baseline:
                 m["content"] = head + "\n" + await self.neut(body)
         return out
 
-    @staticmethod
-    def _masked(msgs: list[dict]) -> list[dict]:
+    def _masked(self, msgs: list[dict]) -> list[dict]:
         out = copy.deepcopy(msgs)
-        out[1] = {"role": "user", "content": f"User task: {MASK}"}
+        out[1] = {"role": "user", "content": f"User task: {self.mask}"}
         return out
 
     async def _repair_exec(self, keys: dict[str, str] | None, detection: dict) -> dict:
@@ -264,6 +264,8 @@ class Baseline:
 
 async def run_baseline(method: str, F: FaultedRun, spec, run_cfg: dict, llm, out_dir: Path | None) -> dict:
     b = Baseline(method, F, spec, run_cfg, llm, out_dir)
+    if method == "nodef":  # F scored through the same commit path as every other row
+        return b.result(F.events, F.summary.get("report"), {"flagged": False})
     if method in DEFENSES:
         return await b.prevent()
     if method == "melon_exec":

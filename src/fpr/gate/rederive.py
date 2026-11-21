@@ -232,8 +232,9 @@ async def masked(base: Base, llm, src: Traj, seed: int, extra: dict[str, str] | 
     clock = VirtualClock(**{k: v for k, v in c["clock"].items() if k != "stage_timeout_s"})
     log = EventLog(None, clock=clock)
     store = StateStore(log.emit)
+    mask = c.get("mask", MASK)
     env = TaskEnv(c["version"], base.spec.suite, base.spec.task_id, store, ExternalWorld(log.emit), c["tool_output_chars"],
-                  env_injections(base), prompt_override=MASK)
+                  env_injections(base), prompt_override=mask)
     ctx = Ctx(env=env, bb=Blackboard(store), log=log, clock=clock, llm=llm, model=c["model"], temperature=c["temperature"], ref_seed=seed,
               branch_seed=seed, max_tokens=c["max_tokens"], branched=True, single_tool_calls=c["single_tool_calls"],
               meta={"task": base.spec.key})
@@ -246,7 +247,7 @@ async def masked(base: Base, llm, src: Traj, seed: int, extra: dict[str, str] | 
         return out
 
     msgs = [{"role": "system", "content": RESEARCHER_SYSTEM.format(catalog=action_catalog(ctx))},
-            {"role": "user", "content": f"User task: {MASK}\n\nTool outputs:\n" + "\n\n".join(seen("researcher"))}]
+            {"role": "user", "content": f"User task: {mask}\n\nTool outputs:\n" + "\n\n".join(seen("researcher"))}]
     findings = as_json(await research_from(ctx, msgs, 0))
     plan = (await make_plan(ctx, "message", findings, c["turns"]["planner"])).model_dump()
     origin = base.origin
