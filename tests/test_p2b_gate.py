@@ -196,3 +196,31 @@ def test_config_matches_code():
     c = yaml.safe_load((ROOT / "configs/phase2b.yaml").read_text())
     assert c["sprt_reobserve"] == {k: getattr(RO, k) for k in c["sprt_reobserve"]}
     assert c["sprt_mask"] == {k: getattr(M, k) for k in c["sprt_mask"]}
+
+
+def test_gate_matrix_seed_subset(specs, cached, tmp_path):
+    root = tmp_path / "runs"
+    for b, f in ((100, "B2_P"), (102, "B2_P"), (101, "CLEAN_Pout")):
+        d = root / "src" / KEY / "message" / f"{f}_b{b}"
+        d.mkdir(parents=True)
+        asyncio.run(Episode(EpisodeConfig(spec=specs[KEY], mode="message", fault_id=f, branch_seed=b), cached, d).run())
+        (d / "DONE").write_text("x")
+    for sd in (0, 3):
+        d = root / "src" / KEY / "message" / f"ref_s{sd}"
+        d.mkdir(parents=True)
+        asyncio.run(Episode(EpisodeConfig(spec=specs[KEY], mode="message", ref_seed=sd, branch_seed=sd), cached, d).run())
+        (d / "DONE").write_text("x")
+    runs = gate_matrix(root, "src", "g", "nodef", "base", seeds=[100, 101])
+    assert sorted((r.fault or "REF", r.branch_seed) for r in runs) == [("B2_P", 100), ("CLEAN_Pout", 101), ("REF", 0)]
+
+
+def test_outage_is_not_a_stall(specs, tmp_path):
+    """A lost LLM server must fail the run (rerun later), never be scored as a model stall."""
+    from fpr.llm.client import LLMUnavailable
+
+    class Down:
+        async def chat(self, req, meta):
+            raise LLMUnavailable("server unreachable")
+
+    with pytest.raises(LLMUnavailable):
+        asyncio.run(Episode(EpisodeConfig(spec=specs[KEY], mode="message"), Down(), None).run())

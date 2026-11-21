@@ -22,7 +22,7 @@ from .faults.injectors import Injector, as_json
 from .faults.payloads import env_payload, injection_text
 from .faults.spec import by_id
 from .llm.cache import CacheMiss
-from .llm.client import LLM
+from .llm.client import LLM, LLMUnavailable
 from .scoring.outcome import score
 from .scoring.recovery import recovery_metrics
 from .tasks import TaskSpec
@@ -175,7 +175,7 @@ class Episode:
             if mode == "message":
                 self.log.emit("message", {"from": "verifier" if c.verify else "planner", "to": "executor", "artifact": "plan", "version": vid})
             report = await execute(self.ctx, mode, pj, c.turns["executor"], on_return=self.inj.e_tool, on_args=self.inj.e_args, guard=gate)
-        except CacheMiss:
+        except (CacheMiss, LLMUnavailable):
             raise
         except Exception as e:  # noqa: BLE001 - recorded as a stall; the run is kept
             error = f"{type(e).__name__}: {str(e)[:500]}"

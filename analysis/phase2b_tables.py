@@ -31,7 +31,7 @@ LABEL = {"nodef": "No defense", "ccg": "CCG (ours)", "ccg_1shot": "CCG-1shot", "
 def load(exp: str) -> pd.DataFrame:
     rows = []
     for p in sorted((RUNS / exp).glob("*/*/*/summary.json")):
-        if (p.parent / "DONE").exists():
+        if (p.parent / "DONE").exists() and "." not in p.parent.name:  # labeled leftovers (.incompleteN, .outageN) excluded
             s = json.loads(p.read_text())
             s["run_dir"] = str(p.parent)
             rows.append(s)

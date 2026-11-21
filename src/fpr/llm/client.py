@@ -10,6 +10,11 @@ import httpx
 from pydantic import BaseModel, Field
 
 NO_THINK = {"chat_template_kwargs": {"enable_thinking": False}}
+OUTAGE_S = 900  # keep retrying a lost server this long (a restart pauses runs instead of failing them)
+
+
+class LLMUnavailable(RuntimeError):
+    """The server could not be reached; never recorded as a model stall."""
 
 
 class ChatRequest(BaseModel):
@@ -125,7 +130,16 @@ class OpenAIClient:
         ids = ids_p + tok(render_assistant(req.assistant), add_special_tokens=False).input_ids
         body = {"model": req.model, "prompt": ids, "max_tokens": 1, "temperature": 0.0, "prompt_logprobs": 0}
         async with self.sem:
-            r = await self.http.post(f"{self.base_url}/completions", json=body)
+            waited = 0.0
+            while True:
+                try:
+                    r = await self.http.post(f"{self.base_url}/completions", json=body)
+                    break
+                except httpx.TransportError as e:
+                    if waited >= OUTAGE_S:
+                        raise LLMUnavailable(f"LLM server unreachable for {waited:.0f}s: {e}") from e
+                    await asyncio.sleep(10.0)  # network backoff only
+                    waited += 10.0
             r.raise_for_status()
             data = r.json()
         plp = data["choices"][0]["prompt_logprobs"]
@@ -150,7 +164,9 @@ class OpenAIClient:
             body["response_format"] = req.response_format
         async with self.sem:
             last: Exception | None = None
-            for attempt in range(4):
+            waited = 0.0
+            attempt = 0
+            while True:
                 t0 = time.perf_counter()
                 try:
                     r = await self.http.post(f"{self.base_url}/chat/completions", json=body)
@@ -163,9 +179,14 @@ class OpenAIClient:
                     last = e
                     if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500:
                         raise
-                    await asyncio.sleep(2 * (attempt + 1))  # network backoff only
-            else:
-                raise RuntimeError(f"LLM request failed: {last}")
+                    attempt += 1
+                    if isinstance(e, httpx.HTTPStatusError) and attempt >= 4:
+                        raise RuntimeError(f"LLM request failed: {last}") from e
+                    if waited >= OUTAGE_S:
+                        raise LLMUnavailable(f"LLM server unreachable for {waited:.0f}s: {last}") from e
+                    pause = min(2.0 * attempt, 30.0)
+                    await asyncio.sleep(pause)  # network backoff only
+                    waited += pause
         msg = data["choices"][0]["message"]
         calls = [
             ToolCall(id=c.get("id", ""), name=c["function"]["name"], arguments=c["function"].get("arguments") or "{}")

@@ -413,7 +413,7 @@ class Runner:
 def summaries(root: Path, exp: str) -> list[dict]:
     out = []
     for p in sorted((root / exp).glob("*/*/*/summary.json")):
-        if (p.parent / "DONE").exists():
+        if (p.parent / "DONE").exists() and "." not in p.parent.name:  # skip labeled leftovers (.incompleteN, .outageN)
             s = json.loads(p.read_text())
             s["run_dir"] = str(p.parent)
             out.append(s)
