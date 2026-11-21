@@ -360,3 +360,20 @@ chosen after seeing a real-model recovery result. Where the design was silent:
   V1/V2/V3 prompts applied to F's findings, plan and writes, first flag); MELON-style masked re-execution (each executor
   write request re-issued with the user task and plan replaced by a task-neutral instruction and the tool outputs; a
   flag when the masked response repeats the write).
+
+## Amendment 9 — Phase 2b counterfactual commit gate (2026-11-21, before any CCG code runs on a real model)
+
+The threat model, staging, the re-derivation primitive, the three commit criteria (task masked, source neutralized,
+source re-observed, each reported separately; primary gate = masked ∨ re-observed), the SPRT parameters,
+localization, rollback-to-read repair, baselines, benchmarks, adaptive attacks A1/A2, the MELON validation rule,
+metrics, success criteria S1–S8 and acceptance tests are fixed in `docs/phase2b_design.md` (§1–§12).
+
+SPRT truncation (finding from 2026-11-18, applied now):
+- Exact computation: at n_max = 8 the Phase 2 test has false invalidation 0.488 at p = τ1, not ≤ β = 0.20.
+- Phase 2 error statements are restated for the test that was run: false reuse ≤ 0.017 at τ0, false invalidation
+  0.49 at τ1.
+- New runs of R4p-SPRT and every CCG test use n_max = 24. That gives 0.028 / 0.181 for the reuse-oriented test, and
+  a 0.114 false flag and 0.103 miss for the masked test.
+- `configs/phase2.yaml` keeps n_max = 8 for the Phase 2 runs already done; `configs/phase2b.yaml` sets 24.
+
+Any change after the first real-model CCG run is a new dated amendment.

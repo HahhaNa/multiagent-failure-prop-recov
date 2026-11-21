@@ -19,7 +19,7 @@ from fpr.recovery.episode import Recovery, RecoveryConfig
 from fpr.recovery.faulted import FaultedRun, sig
 from fpr.recovery.gt import gt_counts, label
 from fpr.recovery.probes import ProbeBuilder
-from fpr.recovery.sprt import SPRT, SPRTParams
+from fpr.recovery.sprt import SPRT, SPRTParams, operating_characteristic
 
 
 def _run(specs, mock, d, key, mode, fault, seed=100):
@@ -186,7 +186,7 @@ def _sprt(stream, p):
 
 def test_sprt_reference_and_error_rates():
     rng = random.Random(0)
-    p8 = SPRTParams()
+    p8 = SPRTParams(n_max=8)
     for _ in range(2000):
         q = rng.random()
         stream = [rng.random() < q for _ in range(8)]
@@ -200,6 +200,22 @@ def test_sprt_reference_and_error_rates():
                 t.update(rng.random() < q)
             n_err += t.decision == err
         assert n_err / 100_000 <= bound + 0.01, (q, err, n_err)
+
+
+def test_sprt_truncation_oc():
+    """n_max = 8 breaks beta at tau1 (0.49); n_max = 24 meets both bounds (phase2b design §5)."""
+    oc8 = operating_characteristic(SPRTParams(n_max=8), 0.30)
+    oc24 = operating_characteristic(SPRTParams(), 0.30)
+    assert abs(oc8["invalidate"] - 0.488) < 0.002 and oc24["invalidate"] <= 0.20
+    assert operating_characteristic(SPRTParams(), 0.05)["reuse"] <= 0.05
+    rng = random.Random(1)
+    n_inv = 0
+    for _ in range(100_000):
+        t = SPRT(SPRTParams())
+        while t.open:
+            t.update(rng.random() < 0.30)
+        n_inv += t.decision == "invalidate"
+    assert abs(n_inv / 100_000 - oc24["invalidate"]) < 0.01
 
 
 # 8. budget: B = 4 uses at most 4 probe calls; B = inf tests every candidate

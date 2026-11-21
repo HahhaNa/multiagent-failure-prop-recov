@@ -1,4 +1,7 @@
-"""Truncated Wald SPRT between Bern(tau0) (dependent) and Bern(tau1) (reusable), design §3."""
+"""Truncated Wald SPRT between Bern(tau0) (dependent) and Bern(tau1) (reusable), design §3.
+
+n_max = 24 meets alpha and beta at tau0 / tau1 (phase2b design §5); Phase 2 runs used 8 (configs/phase2.yaml).
+"""
 
 import math
 from dataclasses import dataclass, field
@@ -10,7 +13,8 @@ class SPRTParams:
     tau1: float = 0.30
     alpha: float = 0.05  # P(decide reuse | dependent)
     beta: float = 0.20  # P(decide invalidate | reusable)
-    n_max: int = 8  # truncation; undecided -> invalidate
+    n_max: int = 24  # truncation
+    on_trunc: str = "invalidate"  # decision for an undecided test (the conservative side)
 
     @property
     def up(self) -> float:
@@ -49,7 +53,7 @@ class SPRT:
         elif self.llr <= self.p.low + 1e-12:
             self.decision = "invalidate"
         elif self.n >= self.p.n_max:
-            self.decision = "invalidate"
+            self.decision = self.p.on_trunc
             self.truncated = True
         return self.decision
 
@@ -68,3 +72,32 @@ def wald_lower_bound(p: SPRTParams) -> tuple[float, float]:
     h0 = ((1 - a) * math.log((1 - a) / b) + a * math.log(a / (1 - b))) / kl(p.tau0, p.tau1)
     h1 = ((1 - b) * math.log((1 - b) / a) + b * math.log(b / (1 - a))) / kl(p.tau1, p.tau0)
     return h0, h1
+
+
+def operating_characteristic(p: SPRTParams, q: float) -> dict:
+    """Exact P(reuse), P(invalidate), P(truncated) and E[n] of the truncated test when matches are Bern(q)."""
+    states = {0: 1.0}  # number of matches -> probability, among open paths
+    reuse = inval = en = 0.0
+    for n in range(1, p.n_max + 1):
+        nxt: dict[int, float] = {}
+        for k, pr in states.items():
+            for hit, w in ((1, q), (0, 1 - q)):
+                kk, mass = k + hit, pr * w
+                if mass == 0:
+                    continue
+                llr = kk * p.hit + (n - kk) * p.miss
+                if llr >= p.up - 1e-12:
+                    reuse += mass
+                    en += mass * n
+                elif llr <= p.low + 1e-12:
+                    inval += mass
+                    en += mass * n
+                else:
+                    nxt[kk] = nxt.get(kk, 0.0) + mass
+        states = nxt
+    trunc = sum(states.values())
+    if p.on_trunc == "reuse":
+        reuse += trunc
+    else:
+        inval += trunc
+    return {"reuse": reuse, "invalidate": inval, "truncated": trunc, "E_n": en + trunc * p.n_max}
