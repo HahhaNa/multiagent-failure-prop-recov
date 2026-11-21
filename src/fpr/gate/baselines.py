@@ -9,13 +9,15 @@ import copy
 import json
 from pathlib import Path
 
+import httpx
+
 from ..agents.executor import executor_tools
 from ..agents.planner import FINDINGS_MARK, action_catalog, plan_format
 from ..agents.planner import SYSTEM as PLANNER_SYSTEM
 from ..env.agentdojo_adapter import TaskEnv
 from ..env.external_world import ExternalWorld
 from ..env.state_store import StateStore
-from ..llm.client import ChatRequest, ScoreRequest
+from ..llm.client import ChatRequest, ChatResponse, ScoreRequest
 from ..orchestrator import Episode, EpisodeConfig
 from ..recovery.faulted import FaultedRun
 from .ccg import Meter, commit_score, make_base, run_fields, write_out
@@ -81,7 +83,10 @@ class Baseline:
     async def ask(self, agent: str, msgs: list[dict], tools=None, fmt=None):
         req = ChatRequest(model=self.c["model"], messages=msgs, tools=tools, response_format=fmt, temperature=self.c["temperature"],
                           seed=GATE_SEED, max_tokens=self.c["max_tokens"])
-        return await self.meter.chat(req, {"agent": agent, "mode": "guided" if fmt else "tools", "task": self.spec.key})
+        try:
+            return await self.meter.chat(req, {"agent": agent, "mode": "guided" if fmt else "tools", "task": self.spec.key})
+        except httpx.HTTPStatusError:  # context overflow of a replayed request: no tool calls (a stall, as in Episodes)
+            return ChatResponse(content=None)
 
     def result(self, events: list[dict], report: str | None, detection: dict, drop: set[str] | None = None) -> dict:
         out = {**run_fields(self.F, self.spec), "method": self.method, **commit_score(self.base, self.spec, self.F, events, drop or set(), report),

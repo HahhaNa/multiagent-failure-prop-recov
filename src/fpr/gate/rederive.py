@@ -11,6 +11,8 @@ import copy
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
+import httpx
+
 from ..agents.base import Ctx
 from ..agents.executor import execute
 from ..agents.planner import action_catalog
@@ -248,8 +250,12 @@ async def masked(base: Base, llm, src: Traj, seed: int, extra: dict[str, str] | 
 
     msgs = [{"role": "system", "content": RESEARCHER_SYSTEM.format(catalog=action_catalog(ctx))},
             {"role": "user", "content": f"User task: {mask}\n\nTool outputs:\n" + "\n\n".join(seen("researcher"))}]
-    findings = as_json(await research_from(ctx, msgs, 0))
-    plan = (await make_plan(ctx, "message", findings, c["turns"]["planner"])).model_dump()
+    try:
+        findings = as_json(await research_from(ctx, msgs, 0))
+        plan = (await make_plan(ctx, "message", findings, c["turns"]["planner"])).model_dump()
+    except httpx.HTTPStatusError as e:  # context overflow: a stall, as in every Episode
+        log.emit("error", {"error": f"HTTPStatusError: {str(e)[:300]}"})
+        return Traj(log.events, None, [], {})
     origin = base.origin
     persistent_e = base.fault_id is not None and by_id(base.fault_id).type == "B1" and by_id(base.fault_id).point == "E.tool"
 
@@ -260,7 +266,11 @@ async def masked(base: Base, llm, src: Traj, seed: int, extra: dict[str, str] | 
 
     ex = seen("executor")
     context = ("Tool outputs observed so far:\n" + "\n\n".join(ex)) if ex else None
-    report = await execute(ctx, "message", plan, c["turns"]["executor"], on_return=hook, context=context)
+    try:
+        report = await execute(ctx, "message", plan, c["turns"]["executor"], on_return=hook, context=context)
+    except httpx.HTTPStatusError as e:  # context overflow: a stall; writes made before it still count
+        log.emit("error", {"error": f"HTTPStatusError: {str(e)[:300]}"})
+        report = None
     return Traj(log.events, report, [], {"findings": findings, "plan": plan})
 
 
