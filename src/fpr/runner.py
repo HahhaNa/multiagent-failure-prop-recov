@@ -389,7 +389,8 @@ class Runner:
     async def run_all(self, runs: list[RunSpec], log: Path | None = None) -> None:
         refs = [r for r in runs if r.fault is None]
         branches = [r for r in runs if r.fault is not None]
-        for phase in (refs, branches):  # branches replay the seed-0 reference prefix
+        phases = [runs] if all(r.method for r in runs) else [refs, branches]  # gate/base runs share no prefix
+        for phase in phases:  # Episode branches replay the seed-0 reference prefix
             tasks = [asyncio.create_task(self.run_one(r)) for r in phase]
             for n, fut in enumerate(asyncio.as_completed(tasks), 1):
                 await fut
