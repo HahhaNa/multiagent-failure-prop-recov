@@ -229,11 +229,15 @@ def adv_matrix(specs: dict[str, TaskSpec], exp: str, attack: str = "ADV", benign
     return out
 
 
-def gate_matrix(root: Path, src: str, exp: str, method: str, kind: str = "gate", tasks: list[str] | None = None) -> list[RunSpec]:
-    """One gate / baseline run per finished run of src: every attack, benign, fault and clean-continuation run."""
+def gate_matrix(root: Path, src: str, exp: str, method: str, kind: str = "gate", tasks: list[str] | None = None,
+                seeds: list[int] | None = None) -> list[RunSpec]:
+    """One gate / baseline run per finished run of src: every attack, benign, fault and clean-continuation run.
+    seeds: keep branches with these branch seeds and references with the first len(seeds) reference seeds (Amendment 11)."""
     out = []
     for s in summaries(root, src):
         if tasks is not None and s["task"] not in tasks:
+            continue
+        if seeds is not None and (s["branch_seed"] not in seeds if s.get("fault") else s["ref_seed"] >= len(seeds)):
             continue
         f = s.get("fault")
         if f and not f.startswith(("CLEAN_", "ADV")) and not s.get("injected"):
@@ -471,6 +475,7 @@ def main() -> None:
     ap.add_argument("--method", default="sprt", help="p2: recovery method")
     ap.add_argument("--params", default="", help="p2: options, e.g. budget=4,tau1=0.2")
     ap.add_argument("--tasks", default="", help="p2: comma-separated task subset")
+    ap.add_argument("--seeds", default="", help="gate/base: branch-seed subset, e.g. 100,101 (Amendment 11)")
     a = ap.parse_args()
     cfg = load_cfg()
     root = runs_root(cfg)
@@ -566,7 +571,8 @@ def main() -> None:
         dl = yaml.safe_load((ROOT / "configs/phase2b_delegated.yaml").read_text())["tasks"]
         runs = [RunSpec(a.exp or "a2_nodef", f"{k}+none", "message", None, sd, sd) for k in dl for sd in range(5)]
     elif a.stage in ("gate", "base"):  # Phase 2b commit gate / defense baselines over the finished runs of --src
-        runs = gate_matrix(root, a.src, a.exp or f"{a.stage}_{a.method}_{a.src}", a.method, a.stage, a.tasks.split(",") if a.tasks else None)
+        runs = gate_matrix(root, a.src, a.exp or f"{a.stage}_{a.method}_{a.src}", a.method, a.stage, a.tasks.split(",") if a.tasks else None,
+                           [int(x) for x in a.seeds.split(",")] if a.seeds else None)
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:

@@ -401,3 +401,23 @@ mask ("Summarize the contents of the following tool outputs.") has no such claus
   - AgentDojo single-agent pipeline; Qwen3-8B on our vLLM server; temperature 0.3, seed 0, thinking off;
   - banking + slack, important_instructions (249 cases), plus the 37 benign tasks.
   - Official MELON embedding replaced by BAAI/bge-large-en-v1.5 (CLS pooling, normalized), threshold 0.8 as coded.
+
+## Amendment 11 — run size for the 14-task set (2026-11-21, before any CCG or baseline run on `main_h2`)
+
+**Measured in a real-model pilot.** The pilot is `pilot_ccg_v1mask`: v1 mask, excluded from every result. A benign
+gate run that commits its single write needs 14 masked samples and 2 re-observed ones. It costs 100k new tokens and
+72 new calls, against 18k tokens for the run itself (6.6× NoDef). The server is KV-cache bound at about 12
+concurrent requests.
+
+**What full coverage would cost.** Gating all 2,805 eligible `main_h2` runs, at about 90 calls each plus localization
+on flagged runs, is about 250k calls, i.e. 17 GPU hours for CCG alone, before ablations and baselines.
+
+**Decision.** Fixed before any method run on `main_h2`, and independent of any outcome:
+- Every Phase 2b method on `main_h2` uses branch seeds 100 and 101 (k = 2 of 5) for fault branches and clean
+  continuations, and reference seeds 0 and 1. That is 1,122 runs per method (`--seeds 100,101`).
+- Confidence intervals are clustered over the 14 tasks, so the cluster count, which bounds their width, does not
+  change.
+- AgentDojo-97 keeps every case: 949 attack plus 97 benign.
+- Ablations on `main_h2`: CCG-1shot, CCG-block, CCG-purify, CCG-M, CCG-Ro.
+- Baselines on `main_h2`: NoDef, MELON-exec, MELON-all, AgentSentry-exec, CausalArmor-exec.
+- The prevention set and the Nz variants run on AgentDojo-97 only (design §7–8).
