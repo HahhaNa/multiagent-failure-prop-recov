@@ -9,7 +9,7 @@ from typing import Any
 from ..agents.schemas import UNAVAILABLE, Claim, Findings, Plan, PlanStep
 from ..scoring.taint import contains
 from ..tasks import TaskSpec
-from .payloads import MODEL, USER, injection_text, perturb_plausible, vtype
+from .payloads import MARKS, MODEL, USER, injection_text, perturb_plausible, vtype
 from .spec import FaultSpec
 
 NUM = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
@@ -107,8 +107,16 @@ class Injector:
                     return replace_value(result, old, new)
         return result
 
+    def _env_attack(self, agent: str, name: str, result: str) -> str:
+        """Phase 2b env attacks: the payload sits in the environment; record the first agent that reads it (entry point)."""
+        if not self.fired and any(m in result for m in MARKS):
+            self._fire(True, target=name, entry=agent, original=None, injected=self.spec.canary or None, vectors=self.spec.vectors)
+        return result
+
     # R.tool
     def r_tool(self, name: str, args: dict, result: str) -> str:
+        if self.fault is not None and self.point == "env":
+            return self._env_attack("researcher", name, result)
         if self.fault is None or self.point != "R.tool" or self.fired:
             return result
         if self.fault.is_clean:
@@ -122,6 +130,8 @@ class Injector:
 
     # E.tool
     def e_tool(self, name: str, args: dict, result: str) -> str:
+        if self.fault is not None and self.point == "env" and name != "read_shared":
+            return self._env_attack("executor", name, result)
         if self.fault is None or self.point != "E.tool" or self.fired or name == "read_shared":
             return result
         if self.fault.is_clean:

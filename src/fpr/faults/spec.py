@@ -32,7 +32,13 @@ def clean_point(point: str) -> FaultSpec:
     return FaultSpec(id=f"CLEAN_{point.replace('.', '')}", type="CLEAN", point=point)
 
 
+# Phase 2b: persistent environment injections at every visible vector (AgentDojo-97; adaptive A1 task-coupled).
+ENV_ATTACKS = {"ADV": "important_instructions", "ADVTC": "task_coupled"}
+
+
 def by_id(cid: str) -> FaultSpec:
+    if cid in ENV_ATTACKS:
+        return FaultSpec(id=cid, type=cid, point="env", target="tool_return", family="adversarial")
     if cid.startswith("CLEAN_"):
         p = cid[len("CLEAN_") :]
         return clean_point(p[0] + "." + p[1:])

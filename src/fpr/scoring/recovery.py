@@ -15,6 +15,8 @@ def taint_from_record(rec: dict) -> list:
         return []
     if rec.get("type") in ("B1", "B2", "B3"):
         return [rec.get("canary")]
+    if rec.get("type") in ("ADV", "ADVTC"):
+        return [rec["canary"]] if rec.get("canary") else []
     if rec.get("type") == "B4":
         return [rec.get("injected")]
     return [new for _, new in rec.get("pairs") or []]

@@ -1,5 +1,6 @@
 """Shared LLM call and tool loop used by all agents."""
 
+import inspect
 import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -39,6 +40,8 @@ class Ctx:
     counters: dict[str, int] = field(default_factory=dict)
     usage: dict[str, int] = field(default_factory=lambda: {"prompt": 0, "completion": 0, "calls": 0, "live": 0})
     transcripts: dict[str, list[list[dict]]] = field(default_factory=dict)
+    before_chat: Callable[[str, bool], None] | None = None  # Phase 2b: fork hook, called with (agent, guided)
+    meta: dict = field(default_factory=dict)  # extra request metadata (not part of the cache key)
 
     def _record_transcript(self, agent: str, messages: list[dict], resp: ChatResponse) -> None:
         """Keep each distinct conversation once, extended in place as it grows."""
@@ -54,12 +57,19 @@ class Ctx:
             self.branched = True
             self.log.emit("branch", {"seed": self.branch_seed})
 
+    def fork(self, seed: int) -> None:
+        """Phase 2b re-derivation: every later call samples with `seed`."""
+        self.branched, self.branch_seed = True, seed
+        self.log.emit("fork", {"seed": seed})
+
     def next_id(self, prefix: str) -> str:
         n = self.counters.get(prefix, 0)
         self.counters[prefix] = n + 1
         return f"{prefix}_{n}"
 
     async def chat(self, agent: str, messages: list[dict], tools: list[dict] | None = None, response_format: dict | None = None) -> ChatResponse:
+        if self.before_chat is not None:
+            self.before_chat(agent, response_format is not None)
         seed = self.branch_seed if self.branched else self.ref_seed
         req = ChatRequest(
             model=self.model,
@@ -70,7 +80,7 @@ class Ctx:
             seed=seed,
             max_tokens=self.max_tokens,
         )
-        resp = await self.llm.chat(req, {"agent": agent, "mode": "guided" if response_format else "tools"})
+        resp = await self.llm.chat(req, {"agent": agent, "mode": "guided" if response_format else "tools", **self.meta})
         for tc in resp.tool_calls:
             tc.id = self.next_id(f"{agent[0]}call")
         self.clock.charge_llm(resp.prompt_tokens, resp.completion_tokens)
@@ -117,7 +127,7 @@ def parse_args(raw: str) -> tuple[dict, str | None]:
         return {}, f"JSONDecodeError: {e}"
 
 
-ToolHook = Callable[[str, dict, str], str]
+ToolHook = Callable[[str, dict, str], str | Awaitable[str]]
 ArgsHook = Callable[[str, dict], dict]
 GuardHook = Callable[[str, dict], Awaitable[str | None]]  # returns a block reason or None
 
@@ -164,6 +174,8 @@ async def run_call(
     ctx.clock.charge_tool()
     if on_return is not None:
         result = on_return(tc.name, args, result)
+        if inspect.isawaitable(result):
+            result = await result
     ev = {
         "agent": agent,
         "call_id": tc.id,

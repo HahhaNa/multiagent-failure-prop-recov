@@ -71,6 +71,7 @@ class TaskEnv:
     world: ExternalWorld
     max_chars: int = 6000
     injections: dict[str, str] = field(default_factory=dict)
+    prompt_override: str | None = None  # Phase 2b masked re-derivation: task-neutral root prompt
 
     def __post_init__(self) -> None:
         self.suite = suite(self.version, self.suite_name)
@@ -89,7 +90,7 @@ class TaskEnv:
 
     @property
     def prompt(self) -> str:
-        return self.task.PROMPT
+        return self.prompt_override if self.prompt_override is not None else self.task.PROMPT
 
     def tool_schemas(self, names: list[str]) -> list[dict]:
         return [openai_tool(self.runtime.functions[n]) for n in names]

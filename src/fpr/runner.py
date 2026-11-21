@@ -215,6 +215,33 @@ def recovery_config(cfg: dict, r: RunSpec, model_name: str, single_tool_calls: b
     )
 
 
+def adv_matrix(specs: dict[str, TaskSpec], exp: str, attack: str = "ADV", benign: bool = True, suites: list[str] | None = None) -> list[RunSpec]:
+    """AgentDojo-97 (phase2b design §8): every attack case once (message mode, seed 0) and every benign task once."""
+    out = []
+    for key, sp in specs.items():
+        if suites and sp.suite not in suites:
+            continue
+        if key.endswith("+none"):
+            if benign:
+                out.append(RunSpec(exp, key, "message", None, 0, 0))
+        elif "+" in key:
+            out.append(RunSpec(exp, key, "message", attack, 0, 0))
+    return out
+
+
+def gate_matrix(root: Path, src: str, exp: str, method: str, kind: str = "gate", tasks: list[str] | None = None) -> list[RunSpec]:
+    """One gate / baseline run per finished run of src: every attack, benign, fault and clean-continuation run."""
+    out = []
+    for s in summaries(root, src):
+        if tasks is not None and s["task"] not in tasks:
+            continue
+        f = s.get("fault")
+        if f and not f.startswith(("CLEAN_", "ADV")) and not s.get("injected"):
+            continue  # fault never applied: nothing to gate beyond its clean twin
+        out.append(RunSpec(exp, s["task"], s["mode"], f, s["ref_seed"], s["branch_seed"], recover_from=s["run_dir"], method=f"{kind}:{method}"))
+    return out
+
+
 # ---------- execution ----------
 
 
@@ -255,7 +282,8 @@ class Runner:
             ec = EpisodeConfig(
                 spec=self.specs[r.task], mode=r.mode, fault_id=r.fault, ref_seed=r.ref_seed, branch_seed=r.branch_seed,
                 model=self.model_name, temperature=c["temperature"], max_tokens=c["max_tokens"], version=c["benchmark_version"],
-                turns=c["turns"], clock=c["clock"], tool_output_chars=c["tool_output_chars"], expect_replay=r.fault is not None,
+                turns=c["turns"], clock=c["clock"], tool_output_chars=c["tool_output_chars"],
+                expect_replay=r.fault is not None and not r.fault.startswith("ADV"),
                 single_tool_calls=self.single_tool_calls, verify=self.verify,
             )
             if r.recover_from:
@@ -281,6 +309,9 @@ class Runner:
     async def _recover(self, r: RunSpec, d: Path) -> dict | None:
         from .recovery.episode import Recovery
         from .recovery.faulted import FaultedRun
+
+        if r.method.startswith(("gate:", "base:")):
+            return await self._gate(r, d)
 
         rc = recovery_config(self.cfg, r, self.model_name, self.single_tool_calls, self.root)
         man = {**self.manifest, "run": r.__dict__, "seed": rc.seed, "probe_seed": rc.probe_seed, "recovery": {
@@ -313,6 +344,40 @@ class Runner:
         (d / "DONE").write_text(man["end"])
         self.stats["done"] += 1
         self.stats["live_calls"] += s["recovery_live_calls"]
+        self.executed.append(str(d))
+        return s
+
+    def gate_run_cfg(self) -> dict:
+        c = self.cfg
+        return {"model": self.model_name, "temperature": c["temperature"], "max_tokens": c["max_tokens"], "version": c["benchmark_version"],
+                "turns": c["turns"], "clock": c["clock"], "tool_output_chars": c["tool_output_chars"], "single_tool_calls": self.single_tool_calls}
+
+    async def _gate(self, r: RunSpec, d: Path) -> dict | None:
+        """Phase 2b: commit gate (gate:<method>) or a defense baseline (base:<method>) applied to the finished run r.recover_from."""
+        from .gate.baselines import run_baseline
+        from .gate.ccg import Gate, GateConfig
+        from .recovery.faulted import FaultedRun
+
+        kind, method = r.method.split(":", 1)
+        man = {**self.manifest, "run": r.__dict__, "phase2b": {"kind": kind, "method": method, "params": r.params}, "start": datetime.now().isoformat()}
+        (d / "manifest.json").write_text(json.dumps(man, indent=1))
+        try:
+            F = FaultedRun.load(r.recover_from)
+            if kind == "gate":
+                gc = GateConfig.for_method(method, run=self.gate_run_cfg())
+                man["phase2b"]["config"] = {k: (v.__dict__ if hasattr(v, "__dict__") else v) for k, v in gc.__dict__.items()}
+                s = await Gate(F, self.specs[r.task], gc, self.llm, d).run()
+            else:
+                s = await run_baseline(method, F, self.specs[r.task], self.gate_run_cfg(), self.llm, d)
+        except Exception:  # noqa: BLE001 - harness bug: keep the run dir, labeled FAILED
+            (d / "FAILED").write_text(traceback.format_exc())
+            self.stats["failed"] += 1
+            return None
+        man["end"] = datetime.now().isoformat()
+        (d / "manifest.json").write_text(json.dumps(man, indent=1, default=str))
+        (d / "DONE").write_text(man["end"])
+        self.stats["done"] += 1
+        self.stats["live_calls"] += s.get("gate_live_calls", 0)
         self.executed.append(str(d))
         return s
 
@@ -411,6 +476,10 @@ def main() -> None:
     if a.mock:
         root = root / "mock"
     specs = load_specs(ROOT / "configs/tasks_candidates.yaml")
+    if a.stage in ("adv", "advtc", "gate", "base"):
+        from .gate.adv import adv_specs
+
+        specs = {**specs, **adv_specs(cfg["benchmark_version"])}
     sel_path = root / "tasks_selected.yaml" if a.mock else ROOT / "configs/tasks_selected.yaml"
     modes = a.modes.split(",") if a.modes else cfg["modes"]
 
@@ -487,6 +556,13 @@ def main() -> None:
                                    a.tasks.split(",") if a.tasks else None)]
     elif a.stage == "p2cal":  # Phase 2 probe calibration control
         runs = p2cal_matrix(root, a.src if a.src != "main" else load_p2()["src"], a.exp or "p2cal", a.params)
+    elif a.stage == "adv":  # Phase 2b AgentDojo-97 attack + benign runs (NoDef)
+        runs = adv_matrix(specs, a.exp or "adv_nodef", suites=a.tasks.split(",") if a.tasks else None)
+    elif a.stage == "advtc":  # Phase 2b adaptive attack A1 (task-coupled) on the candidate tasks with critical facts
+        cand = load_specs(ROOT / "configs/tasks_candidates.yaml")
+        runs = [RunSpec(a.exp or "advtc_nodef", k, m, "ADVTC", 0, 0) for k in cand for m in modes if cand[k].vectors]
+    elif a.stage in ("gate", "base"):  # Phase 2b commit gate / defense baselines over the finished runs of --src
+        runs = gate_matrix(root, a.src, a.exp or f"{a.stage}_{a.method}_{a.src}", a.method, a.stage, a.tasks.split(",") if a.tasks else None)
     elif a.stage == "cross":
         runs = primary_matrix(selected, k=2, core_only=True, modes=["message"], exp=a.exp or f"cross_{a.model}")
     else:

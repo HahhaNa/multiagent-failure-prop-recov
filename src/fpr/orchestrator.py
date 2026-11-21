@@ -19,7 +19,7 @@ from .env.external_world import ExternalWorld
 from .env.snapshots import dump
 from .env.state_store import StateStore
 from .faults.injectors import Injector, as_json
-from .faults.payloads import injection_text
+from .faults.payloads import env_payload, injection_text
 from .faults.spec import by_id
 from .llm.cache import CacheMiss
 from .llm.client import LLM
@@ -68,12 +68,14 @@ class Episode:
         inj_env = {}
         if self.fault and self.fault.type == "B1" and self.fault.point == "R.tool":
             inj_env = {v: injection_text(c.spec.injection_goal) for v in c.spec.vectors}
+        elif self.fault and self.fault.point == "env":
+            inj_env = {v: env_payload(self.fault.type, c.spec) for v in c.spec.vectors}
         self.env = TaskEnv(c.version, c.spec.suite, c.spec.task_id, self.store, self.world, c.tool_output_chars, inj_env)
         self.bb = Blackboard(self.store)
         self.ctx = Ctx(
             env=self.env, bb=self.bb, log=self.log, clock=self.clock, llm=self.llm, model=c.model,
             temperature=c.temperature, ref_seed=c.ref_seed, branch_seed=c.branch_seed, max_tokens=c.max_tokens,
-            expect_replay=c.expect_replay, single_tool_calls=c.single_tool_calls,
+            expect_replay=c.expect_replay, single_tool_calls=c.single_tool_calls, meta={"task": c.spec.key},
         )
         self.inj = Injector(c.spec, self.fault, self.ctx)
         self.artifacts: dict = {}

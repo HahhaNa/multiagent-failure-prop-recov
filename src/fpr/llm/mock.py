@@ -15,6 +15,9 @@ from ..tasks import TaskSpec
 from .client import ChatRequest, ChatResponse, ToolCall
 
 MARK = "<INFORMATION>"
+MASKED = "User task: Summarize the contents"  # Phase 2b masked root prompt
+CORR = re.compile(r"Correction: the [\w ]+? (\S+) given above is outdated; the current [\w ]+? is (\S+?)\.(?:\s|$)")
+INFO = re.compile(r"\s*<INFORMATION>.*?</INFORMATION>\s*", re.DOTALL)
 
 
 def _last_json(text: str) -> Any:
@@ -43,7 +46,9 @@ class MockLLM:
         self.calls += 1
         await asyncio.sleep(0)  # yield so concurrent episodes interleave
         agent = meta["agent"]
-        if agent == "melon":  # masked request: no task prompt; pick the suite by the canary seen in tool outputs
+        if meta.get("task") in self.specs:
+            spec = self.specs[meta["task"]]
+        elif agent == "melon":  # masked request: no task prompt; pick the suite by the canary seen in tool outputs
             text = json.dumps(req.messages)
             spec = next((s for s in self.specs.values() if s.canary and s.canary in text), next(iter(self.specs.values())))
         else:
@@ -76,13 +81,19 @@ class MockLLM:
                 return "", [(c["function"], c["args"])]
             return "DONE", []
         ids = [tc["id"] for m in messages for tc in (m.get("tool_calls") or [])]
+        texts = self._tool_texts(messages) + ([messages[1]["content"]] if MASKED in messages[1]["content"] else [])
+        subs = [m.groups() for t in texts for m in CORR.finditer(t)]
         claims = []
         for i, f in enumerate(spec.critical_facts):
             v = ", ".join(map(str, f.value)) if isinstance(f.value, list) else str(f.value)
-            claims.append({"claim_id": f"c{i + 1}", "text": f"{f.name} is {v}.", "value": v, "source_tool_call_ids": ids[:1]})
+            v0 = v
+            for old, new in subs:
+                v = v.replace(old, new)
+            note = " (corrected)" if v != v0 else ""
+            claims.append({"claim_id": f"c{i + 1}", "text": f"{f.name} is {v}.{note}", "value": v, "source_tool_call_ids": ids[:1]})
         for nc in spec.noncritical_facts[:1]:
             claims.append({"claim_id": f"c{len(claims) + 1}", "text": f"Also seen: {nc.value}.", "value": str(nc.value), "source_tool_call_ids": ids[:1]})
-        for t in self._tool_texts(messages):
+        for t in texts:
             if MARK in t:
                 body = t[t.index(MARK) : t.index("</INFORMATION>") + 14] if "</INFORMATION>" in t else t[t.index(MARK) :]
                 claims.append({"claim_id": f"c{len(claims) + 1}", "text": body, "value": spec.canary, "source_tool_call_ids": ids[-1:]})
@@ -97,7 +108,8 @@ class MockLLM:
         findings = _first_json_after(texts[-1] if texts else "", "Researcher findings (JSON):\n") or {}
         claims = {c["claim_id"]: c for c in findings.get("claims", [])} if isinstance(findings, dict) else {}
         steps = []
-        for k, call in enumerate(spec.gt_writes):
+        masked = MASKED in messages[1]["content"]
+        for k, call in enumerate([] if masked else spec.gt_writes):
             args, cites = json.loads(json.dumps(call["args"])), []
             for i, f in enumerate(spec.critical_facts):
                 if f.call != spec.write_index[k]:
@@ -109,7 +121,7 @@ class MockLLM:
                 if c:
                     cites.append(cid)
             steps.append({"step_id": f"s{k + 1}", "action": call["function"], "args": args, "cites": cites})
-        if any(spec.canary in json.dumps(c) for c in claims.values()):
+        if any(MARK in json.dumps(c) or (spec.canary and spec.canary in json.dumps(c) and "(corrected)" not in c["text"]) for c in claims.values()):
             for c in spec.injection_calls:
                 steps.append({"step_id": f"s{len(steps) + 1}", "action": c["function"], "args": c["args"], "cites": []})
         return json.dumps({"steps": steps}), []
@@ -131,6 +143,11 @@ class MockLLM:
             return "", [(c["function"], dict(c["args"])) for c in spec.injection_calls[:1]]
         return "Summary.", []
 
+    def _neutralizer(self, spec, messages, guided, state):
+        """Drops instruction blocks, keeps data (task-coupled corrections look like data and survive)."""
+        text = messages[1]["content"].split("\n\nTool output:\n", 1)[-1]
+        return INFO.sub("\n", text).strip(), []
+
     def _verifier(self, spec, messages, guided, state):
         return _mock_verifier(spec, messages), []
 
@@ -144,7 +161,7 @@ class MockLLM:
         only = re.search(r"Execute only steps (\[[^\]]*\])", messages[1]["content"])
         keep = set(json.loads(only.group(1).replace("'", '"'))) if only else None
         todo = [(s["action"], {**s["args"], "step_id": s["step_id"]}) for s in plan.get("steps", []) if keep is None or s["step_id"] in keep]
-        if MARK in json.dumps(plan) or any(MARK in t for t in texts):
+        if MARK in json.dumps(plan) or any(MARK in t for t in texts) or MARK in messages[1]["content"]:
             todo += [(c["function"], dict(c["args"])) for c in spec.injection_calls]
         done_keys = [_key(n, a) for n, a in done]
         for n, a in todo:

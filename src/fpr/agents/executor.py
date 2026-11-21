@@ -47,11 +47,14 @@ async def execute(
     only_steps: list[str] | None = None,
     guard: GuardHook | None = None,
     dedup: DedupHook | None = None,
+    context: str | None = None,
 ) -> str | None:
-    """only_steps restricts execution to the given step ids (Phase 2)."""
+    """only_steps restricts execution to the given step ids (Phase 2); context is appended to the task (Phase 2b masked run)."""
     names = ctx.env.read_tools + list(ctx.env.write_labels)
     tools = with_step_id(ctx.env.tool_schemas(names))
     task = f"User task: {ctx.env.prompt}"
+    if context:
+        task += "\n\n" + context
     if mode == "message":
         p = plan_json
         if only_steps is not None and isinstance(p, dict):
