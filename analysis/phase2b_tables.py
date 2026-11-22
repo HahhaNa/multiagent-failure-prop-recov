@@ -274,6 +274,63 @@ def criteria(adv: dict[str, pd.DataFrame], acc: dict[str, pd.DataFrame]) -> None
     pd.DataFrame(rows, columns=["id", "criterion", "estimate", "lo", "hi", "pass", "note"]).to_csv(OUT / "criteria.csv", index=False)
 
 
+# ---------------- adaptive attacks A1 / A2 (design §8) ----------------
+def adaptive() -> None:
+    rows = []
+    for src, kind in (("advtc_nodef", "A1 task-coupled"), ("a2_nodef", "A2 delegated (benign)")):
+        F = load(src)
+        if F.empty:
+            continue
+        for m in ("nodef", "ccg", "ccg_mnzro", "ccg_nz", "ccg_nz_remove"):
+            d = method_runs(src, m)
+            if d.empty:
+                continue
+            d = d.merge(F[["run_dir"]].rename(columns={"run_dir": "recover_from"}), on="recover_from")
+            d["cluster"] = d["task"].str.split("+").str[0]
+            for c in ("utility", "flagged"):
+                if c in d:
+                    d[c] = d[c].fillna(False).astype(bool).astype(float)
+            d["harm"] = (d.get("tainted_committed_writes", 0) > 0).astype(float)
+            r = {"set": kind, "method": m, "label": LABEL.get(m, m), "n": len(d)}
+            put(r, "utility", d, "utility")
+            put(r, "harm", d, "harm")
+            if "flagged" in d:
+                put(r, "flag", d, "flagged")
+            for c in ("M", "Nz", "Ro"):
+                d[f"flag_{c}"] = [float(c in (x or [])) for x in d.get("flagged_by_round0", pd.Series([[]] * len(d)))]
+                put(r, f"flag_{c}", d, f"flag_{c}")
+            rows.append(r)
+    pd.DataFrame(rows).to_csv(OUT / "adaptive.csv", index=False)
+
+
+# ---------------- exploratory (not pre-registered) ----------------
+def exploratory(adv: dict[str, pd.DataFrame], acc: dict[str, pd.DataFrame]) -> None:
+    rows = []
+    for m, d in adv.items():
+        if "flagged" not in d or m == "nodef":
+            continue
+        up = d[d["attack"] & (d["entry_f"] == "researcher") & d["f_sec"]]
+        ben = d[~d["attack"]]
+        r = {"method": m, "label": LABEL.get(m, m)}
+        r["detect_up"], r["clean_flag"] = boot(up, "flagged")[0], boot(ben, "flagged")[0]
+        r["J"] = r["detect_up"] - r["clean_flag"]
+        rows.append(r)
+    pd.DataFrame(rows).to_csv(OUT / "exploratory_adv_youden.csv", index=False)
+    rows = []
+    g = acc.get("ccg")
+    for b in ("ccg_block", "ccg_purify", "ccg_1shot", "ccg_m", "ccg_ro", "nodef"):
+        if g is None or b not in acc:
+            continue
+        for fam in ("accidental", "adversarial", "clean"):
+            a, bb = g[g["family"] == fam], acc[b][acc[b]["family"] == fam]
+            est, lo, hi, n = paired(a, bb, "utility")
+            rows.append({"comparison": f"ccg - {b}", "family": fam, "metric": "utility", "estimate": est, "lo": lo, "hi": hi, "n": n})
+            col = "residual_harm" if fam == "adversarial" else "tainted_any"
+            est, lo, hi, n = paired(a, bb, col)
+            rows.append({"comparison": f"ccg - {b}", "family": fam, "metric": "harm", "estimate": est, "lo": lo, "hi": hi, "n": n})
+    pd.DataFrame(rows).to_csv(OUT / "exploratory_acc_paired.csv", index=False)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     adv, acc = adv_frame(), acc_frame()
@@ -282,6 +339,8 @@ def main() -> None:
     if acc:
         acc_tables(acc)
     criteria(adv, acc)
+    adaptive()
+    exploratory(adv, acc)
     for f in sorted(OUT.glob("*.csv")):
         print(f.name, f.stat().st_size and len(pd.read_csv(f)))
 

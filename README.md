@@ -312,6 +312,22 @@ Reproduce: `scripts/phase2_h2.sh`, `uv run python -m fpr.runner gt`, `scripts/ph
 total on one RTX 5070 Ti), then `analysis/phase2_power.py`, `phase2_split.py`, `phase2_harness.py`, `phase2_tables.py`,
 `phase2_channels.py`. Run summaries: `data/runs_{main,verify,restart,gt}_h2.csv.gz`, `data/runs_p2*.csv.gz`.
 
+## 9b. Phase 2b: counterfactual commit gate with rollback repair
+
+- **Method.** Every write waits at a commit point at the end of the episode. Each pending write is re-derived
+  through all three agents, under a task-masked root and with fresh re-observation of its sources. A truncated SPRT
+  decides whether the write depends on the intervened input. A flagged write is localized to its source read, the
+  episode is rolled back to that read, and the downstream agents are re-run.
+- **Documents.** Design and pre-registered criteria: `docs/phase2b_design.md` (Amendments 9–12 in
+  `docs/preregistration.md`). Results: `docs/phase2b_results.md`. Generated tables: `data/tables/phase2b/` (summary,
+  CSV, LaTeX).
+- **Code.** `src/fpr/gate/`.
+- **Reproduce.**
+  - `uv run python -m fpr.runner adv` (AgentDojo-97 without defense);
+  - `scripts/phase2b_queue_a.sh`, `phase2b_queue_b.sh`, `phase2b_queue_cb.sh` (methods and baselines);
+  - `uv run python scripts/melon_validate.py` (MELON check; needs the official MELON file locally);
+  - `uv run python analysis/phase2b_tables.py && uv run python analysis/phase2b_report.py && uv run python analysis/phase2b_latex.py`.
+
 ## 10. Repository layout
 
 ```
