@@ -46,6 +46,23 @@ def method_runs(src: str, m: str) -> pd.DataFrame:
     return load(f"{kind}_{m}_{src}{EXP_SUFFIX.get(m, '')}")
 
 
+CTX = "maximum context length"
+
+
+def _overflow_dir(d: str) -> bool:
+    for name in ("final_events.jsonl", "events.jsonl", "episode_summary.json"):
+        p = Path(d) / name
+        if p.exists() and CTX in p.read_text():
+            return True
+    return False
+
+
+def overflow_flags(d: pd.DataFrame) -> pd.Series:
+    """A run is affected if any of its calls (or any gate replay) hit the context limit and was scored as a stall."""
+    gate = (d.get("n_overflow", pd.Series(0, index=d.index)).fillna(0) > 0) | d.get("final_overflow", pd.Series(0, index=d.index)).fillna(0).astype(bool)
+    return gate | d["run_dir"].map(_overflow_dir) | d["f_overflow"]
+
+
 def boot(df: pd.DataFrame, col: str, cluster: str = "cluster") -> tuple[float, float, float]:
     """Mean and 95% cluster-bootstrap CI of a 0/1 or numeric column."""
     d = df[[cluster, col]].dropna()
@@ -83,12 +100,14 @@ def adv_frame(src: str = "adv_nodef") -> dict[str, pd.DataFrame]:
     base["f_sec"] = F["security_violation"].astype(bool).to_numpy()
     base["entry_f"] = [r.get("entry") if isinstance(r, dict) else None for r in F.get("fault_record", pd.Series([None] * len(F)))]
     base["f_tokens"] = (F["prompt_tokens"] + F["completion_tokens"]).to_numpy()
+    base["f_overflow"] = F["error"].fillna("").astype(str).str.contains(CTX).to_numpy()
     out = {}
     for m in ["nodef", *GATES, *COUNTER, *PREVENT]:
         d = method_runs(src, m)
         if d.empty:
             continue
         d = d.drop(columns=[c for c in ("task",) if c in d]).merge(base, on="recover_from", how="inner")
+        d["overflow"] = overflow_flags(d).astype(bool)
         for c in ("utility", "security_violation", "residual_harm", "flagged"):
             if c in d:
                 d[c] = d[c].fillna(False).astype(bool).astype(float)
@@ -122,6 +141,22 @@ def adv_tables(fr: dict[str, pd.DataFrame]) -> None:
                 put(x, "ASR_after", sub, "security_violation")
                 det.append(x)
     OUT.mkdir(parents=True, exist_ok=True)
+    bad_tasks = sorted({t for d in fr.values() for t in d.loc[d["overflow"], "cluster"]})
+    sens = []
+    for m, d in fr.items():
+        att = d[d["attack"]]
+        r = {"method": m, "label": LABEL.get(m, m), "n_attack": len(att), "n_overflow_runs": int(d["overflow"].sum()),
+             "n_overflow_attack": int(att["overflow"].sum()), "overflow_tasks": ";".join(bad_tasks)}
+        put(r, "ASR_all", att, "security_violation")
+        put(r, "UA_all", att, "utility")
+        put(r, "ASR_excl_runs", att[~att["overflow"]], "security_violation")
+        put(r, "UA_excl_runs", att[~att["overflow"]], "utility")
+        put(r, "ASR_excl_tasks", att[~att["cluster"].isin(bad_tasks)], "security_violation")
+        put(r, "UA_excl_tasks", att[~att["cluster"].isin(bad_tasks)], "utility")
+        sens.append(r)
+    pd.DataFrame(sens).to_csv(OUT / "adv_overflow_sensitivity.csv", index=False)
+    for r in rows:
+        r["n_overflow_runs"] = int(fr[r["method"]]["overflow"].sum())
     pd.DataFrame(rows).to_csv(OUT / "adv_main.csv", index=False)
     pd.DataFrame(det).to_csv(OUT / "adv_detect_entry.csv", index=False)
 

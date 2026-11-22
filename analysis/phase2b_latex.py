@@ -80,7 +80,7 @@ def read(name: str) -> pd.DataFrame | None:
 
 def table_adv() -> str:
     df, de = read("adv_main.csv"), read("adv_detect_entry.csv")
-    body = [r"Group & Method & BU$\uparrow$ & UA$\uparrow$ & ASR$\downarrow$ & Det.\ upstream$\uparrow$ & Det.\ executor$\uparrow$ & Clean flag$\downarrow$ & Cost$\downarrow$ \\",
+    body = [r"Group & Method & BU$\uparrow$ & UA$\uparrow$ & ASR$\downarrow$ & Det.\ upstream$\uparrow$ & Det.\ executor$\uparrow$ & Clean flag$\downarrow$ & Cost$\downarrow$ & Ovf. \\",
             r"\midrule"]
     for gi, (g, ms) in enumerate(GROUPS_ADV):
         for k, m in enumerate(ms):
@@ -89,14 +89,17 @@ def table_adv() -> str:
             prevent_like = m in ("repeat", "spotlight", "toolfilter", "ipiguard", "nodef")
             cells = [g if k == 0 else "", NAMES[m], cell(r, "BU"), cell(r, "UA"), cell(r, "ASR"),
                      r"\na" if prevent_like else cell(up, "detect"), r"\na" if prevent_like else cell(ex, "detect"),
-                     r"\na" if prevent_like else cell(r, "clean_flag"), cell(r, "cost_benign", ci=False, fmt=cost)]
+                     r"\na" if prevent_like else cell(r, "clean_flag"), cell(r, "cost_benign", ci=False, fmt=cost),
+                     "" if r is None or pd.isna(r.get("n_overflow_runs")) else str(int(r["n_overflow_runs"]))]
             body.append(row(cells, m in OURS))
         if gi < len(GROUPS_ADV) - 1:
             body.append(r"\midrule")
     cap = (r"AgentDojo v1.2.2, all 97 user tasks (949 attack cases, important\_instructions; 97 benign), three-agent pipeline, "
            r"Qwen3-8B. Detection: share of NoDef-successful attacks flagged, by the agent that first read the payload "
            r"(upstream = researcher). Cost: tokens $\times$ NoDef on benign runs. 95\% cluster-bootstrap CIs over user tasks.")
-    return wrap(cap, "tab:ccg-adv", "llrrrrrrr", body)
+    cap += (r" Ovf.: runs where a call (or a gate replay) exceeded the 16k context and was scored as a stall; ASR and UA with "
+            r"those runs or their user tasks excluded are in \texttt{adv\_overflow\_sensitivity.csv}.")
+    return wrap(cap, "tab:ccg-adv", "llrrrrrrrr", body)
 
 
 def table_acc() -> str:

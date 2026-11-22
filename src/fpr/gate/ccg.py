@@ -95,6 +95,7 @@ class Gate:
         self.meter = Meter(llm, {e["key"] for e in F.events if e["kind"] == "llm_call"})
         self._neut: dict[str, str] = {}
         self.n_samples = {"M": 0, "Ro": 0, "Nz": 0}
+        self.n_overflow = 0  # samples that hit the context limit and were scored as stalls
 
     # ---------- interventions ----------
     async def neut(self, text: str) -> str:
@@ -110,11 +111,13 @@ class Gate:
         seed = self.cfg.gate_seed0 + k
         self.n_samples[crit] += 1
         if crit == "M":
-            return writes_of(await masked(self.base, self.meter, T, seed, extra), masked=True)
-        if crit == "Nz":
-            extra = {"*": ""} if extra is None else extra
-            return writes_of(await rederive(self.base, self.meter, T.fork_at(0, seed, extra), self.neut))
-        return writes_of(await rederive(self.base, self.meter, T.fork_at(j, seed, extra), self.neut))
+            t = await masked(self.base, self.meter, T, seed, extra)
+        elif crit == "Nz":
+            t = await rederive(self.base, self.meter, T.fork_at(0, seed, {"*": ""} if extra is None else extra), self.neut)
+        else:
+            t = await rederive(self.base, self.meter, T.fork_at(j, seed, extra), self.neut)
+        self.n_overflow += overflowed(t)
+        return writes_of(t, masked=crit == "M")
 
     async def test(self, crit: str, T: Traj, sigs: list[str], j: int = 0, extra: dict[str, str] | None = None) -> dict[str, dict]:
         """One criterion on several pending writes with shared samples. flag: M = recurs; Ro / Nz = not reproduced.
@@ -235,10 +238,16 @@ class Gate:
             "flagged_by_round0": sorted({b for d in (rounds[0]["decisions"].values() if rounds else []) for b in d["by"]}),
             "blocked": sorted(blocked), "n_blocked": len(blocked), "n_rounds": len(rounds),
             "repaired": any(r.get("repair") and (r["repair"].get("j") is not None or r["repair"]["repair"] == "purify") for r in rounds),
-            "rounds": rounds, "n_samples": dict(self.n_samples), **self.meter.summary(),
+            "rounds": rounds, "n_samples": dict(self.n_samples), "n_overflow": self.n_overflow, "final_overflow": overflowed(T),
+            **self.meter.summary(),
         }
         write_out(self.out_dir, out, T.events)
         return out
+
+
+def overflowed(t: Traj) -> int:
+    """1 if a call of the trajectory hit the model's context limit (scored as a stall)."""
+    return int(any(e["kind"] == "error" and "maximum context length" in str(e.get("error")) for e in t.events))
 
 
 def make_base(F: FaultedRun, spec, run_cfg: dict) -> Base:
