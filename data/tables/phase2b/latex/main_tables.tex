@@ -18,15 +18,15 @@ Group & Method & BU$\uparrow$ & UA$\uparrow$ & ASR$\downarrow$ & Det.\ upstream$
 \midrule
 Prevention & Repeat prompt & .33\ci{.09} & .32\ci{.09} & .08\ci{.03} & \na & \na & \na & 1.2$\times$ & 30 \\
  & Spotlighting & .32\ci{.09} & .26\ci{.08} & .15\ci{.04} & \na & \na & \na & 1.0$\times$ & 4 \\
- & DeBERTa detector & .23\ci{.08} & .17\ci{.06} & .03\ci{.02} & .90\ci{.07} & 1.00 & .75\ci{.08} & 1.0$\times$ & 3 \\
+ & DeBERTa detector & .23\ci{.08} & .17\ci{.07} & .03\ci{.02} & .90\ci{.07} & 1.00 & .75\ci{.08} & 1.0$\times$ & 3 \\
  & Tool filter & .35\ci{.09} & .31\ci{.08} & .03\ci{.02} & \na & \na & \na & 0.5$\times$ & 3 \\
  & PromptArmor & .41\ci{.10} & .29\ci{.08} & .10\ci{.03} & .68\ci{.15} & 1.00 & .00 & 1.0$\times$ & 3 \\
- & IPIGuard-style & .41\ci{.10} & .33\ci{.09} & .04\ci{.01} & \na & \na & \na & 1.1$\times$ & 3 \\
- & MELON (executor) & .39\ci{.10} & .28\ci{.08} & .06\ci{.02} & .56\ci{.10} & .50\ci{.50} & .07\ci{.05} & 1.3$\times$ & 3 \\
+ & IPIGuard-style & .41\ci{.09} & .33\ci{.09} & .04\ci{.01} & \na & \na & \na & 1.1$\times$ & 3 \\
+ & MELON (executor) & .39\ci{.09} & .28\ci{.08} & .06\ci{.02} & .56\ci{.10} & .50\ci{.50} & .07\ci{.05} & 1.3$\times$ & 3 \\
 \midrule
 Counterfactual & MELON (every agent) & .22\ci{.08} & .14\ci{.06} & .01\ci{.00} & .96\ci{.04} & .50\ci{.50} & .62\ci{.09} & 1.4$\times$ & 3 \\
- & AgentSentry-style (executor) & .41\ci{.10} & .29\ci{.08} & .11\ci{.03} & .16\ci{.09} & .00 & .02\ci{.03} & 1.4$\times$ & 3 \\
- & CausalArmor-style (executor) & .41\ci{.10} & .30\ci{.08} & .10\ci{.03} & .63\ci{.11} & 1.00 & .23\ci{.08} & 1.7$\times$ & 3 \\
+ & AgentSentry-style (executor) & .41\ci{.09} & .29\ci{.08} & .11\ci{.03} & .16\ci{.09} & .00 & .02\ci{.03} & 1.4$\times$ & 3 \\
+ & CausalArmor-style (executor) & .41\ci{.09} & .30\ci{.08} & .10\ci{.03} & .63\ci{.11} & 1.00 & .23\ci{.08} & 1.7$\times$ & 3 \\
 \midrule
 Commit gate & \cellcolor{oursbg}\textbf{CCG (ours)} & \cellcolor{oursbg}.37\ci{.09} & \cellcolor{oursbg}.30\ci{.09} & \cellcolor{oursbg}.03\ci{.01} & \cellcolor{oursbg}.86\ci{.06} & \cellcolor{oursbg}1.00 & \cellcolor{oursbg}.30\ci{.09} & \cellcolor{oursbg}11.1$\times$ & \cellcolor{oursbg}14 \\
  & \quad 1 sample, no SPRT & .37\ci{.09} & .32\ci{.08} & .04\ci{.02} & .79\ci{.07} & 1.00 & .49\ci{.10} & 3.4$\times$ & 7 \\
@@ -34,8 +34,8 @@ Commit gate & \cellcolor{oursbg}\textbf{CCG (ours)} & \cellcolor{oursbg}.37\ci{.
  & \quad executor purification & .38\ci{.09} & .31\ci{.08} & .03\ci{.01} & .86\ci{.06} & 1.00 & .30\ci{.09} & 8.9$\times$ & 11 \\
  & \quad masked only (M) & .38\ci{.09} & .29\ci{.08} & .04\ci{.02} & .83\ci{.07} & 1.00 & .08\ci{.06} & 3.1$\times$ & 13 \\
  & \quad re-observed only (Ro) & .40\ci{.10} & .31\ci{.08} & .12\ci{.04} & .26\ci{.09} & .00 & .23\ci{.08} & 8.3$\times$ & 3 \\
- & \quad M $\vee$ Nz $\vee$ Ro & .43\ci{.12} & .30\ci{.10} & .05\ci{.02} & .87\ci{.07} & 1.00 & .34\ci{.12} & 13.1$\times$ & 3 \\
- & \quad N-remove neutralizer &  &  &  &  &  &  &  &  \\
+ & \quad M $\vee$ Nz $\vee$ Ro & .38\ci{.10} & .31\ci{.08} & .03\ci{.01} & .89\ci{.06} & 1.00 & .37\ci{.09} & 15.7$\times$ & 18 \\
+ & \quad N-remove neutralizer & .38\ci{.09} & .29\ci{.08} & .03\ci{.01} & .86\ci{.06} & 1.00 & .30\ci{.09} & 12.4$\times$ & 12 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -56,15 +56,15 @@ Method & \multicolumn{3}{c}{Accidental} & \multicolumn{5}{c}{Adversarial detecti
 \midrule
 No defense & .46\ci{.09} & .23\ci{.08} & 1.0$\times$ & \na & \na & \na & \na & \na & \na \\
 MELON (executor) & .41\ci{.11} & .20\ci{.07} & 1.3$\times$ & .21\ci{.12} & .11\ci{.09} & .07\ci{.09} & .25\ci{.20} & .62\ci{.17} & .11\ci{.09} \\
-MELON (every agent) & .28\ci{.14} & .05\ci{.04} & 1.4$\times$ & .73\ci{.20} & .80\ci{.14} & .68\ci{.23} & .79\ci{.21} & .85\ci{.17} & .65\ci{.21} \\
+MELON (every agent) & .28\ci{.15} & .05\ci{.04} & 1.4$\times$ & .73\ci{.20} & .80\ci{.14} & .68\ci{.23} & .79\ci{.21} & .85\ci{.17} & .65\ci{.21} \\
 AgentSentry-style (executor) & .46\ci{.09} & .23\ci{.08} & 1.4$\times$ & .00 & .01\ci{.01} & .00 & .04\ci{.05} & .17\ci{.11} & .00\ci{.01} \\
-CausalArmor-style (executor) & .44\ci{.09} & .23\ci{.07} & 1.8$\times$ & .67\ci{.18} & .55\ci{.15} & .62\ci{.11} & .89\ci{.14} & .79\ci{.15} & .51\ci{.15} \\
-\textbf{CCG (ours)} & \cellcolor{oursbg}.60\ci{.18} & \cellcolor{oursbg}.05\ci{.05} & \cellcolor{oursbg}12.6$\times$ & \cellcolor{oursbg}.48\ci{.23} & \cellcolor{oursbg}.63\ci{.15} & \cellcolor{oursbg}.93\ci{.11} & \cellcolor{oursbg}.61\ci{.25} & \cellcolor{oursbg}.88\ci{.12} & \cellcolor{oursbg}.34\ci{.17} \\
+CausalArmor-style (executor) & .44\ci{.09} & .23\ci{.07} & 1.8$\times$ & .67\ci{.17} & .55\ci{.15} & .62\ci{.10} & .89\ci{.14} & .79\ci{.15} & .51\ci{.15} \\
+\textbf{CCG (ours)} & \cellcolor{oursbg}.60\ci{.18} & \cellcolor{oursbg}.05\ci{.05} & \cellcolor{oursbg}12.6$\times$ & \cellcolor{oursbg}.48\ci{.22} & \cellcolor{oursbg}.63\ci{.15} & \cellcolor{oursbg}.93\ci{.11} & \cellcolor{oursbg}.61\ci{.25} & \cellcolor{oursbg}.88\ci{.12} & \cellcolor{oursbg}.34\ci{.17} \\
 \quad 1 sample, no SPRT & .48\ci{.17} & .03\ci{.05} & 3.7$\times$ & .65\ci{.17} & .70\ci{.14} & 1.00 & .68\ci{.23} & .85\ci{.17} & .53\ci{.18} \\
 \quad block, no repair & .37\ci{.13} & .04\ci{.05} & 8.4$\times$ & .48\ci{.22} & .63\ci{.15} & .93\ci{.11} & .61\ci{.25} & .90\ci{.10} & .35\ci{.17} \\
 \quad executor purification & .40\ci{.13} & .05\ci{.04} & 10.3$\times$ & .48\ci{.22} & .63\ci{.15} & .93\ci{.11} & .61\ci{.25} & .90\ci{.10} & .35\ci{.17} \\
-\quad masked only (M) & .40\ci{.12} & .21\ci{.08} & 3.7$\times$ & .40\ci{.22} & .15\ci{.16} & .11\ci{.14} & .14\ci{.16} & .75\ci{.18} & .17\ci{.17} \\
-\quad re-observed only (Ro) & .69\ci{.10} & .07\ci{.06} & 8.3$\times$ & .10\ci{.15} & .53\ci{.14} & .93\ci{.11} & .50\ci{.25} & .37\ci{.19} & .18\ci{.12} \\
+\quad masked only (M) & .40\ci{.12} & .21\ci{.08} & 3.7$\times$ & .40\ci{.21} & .15\ci{.16} & .11\ci{.14} & .14\ci{.16} & .75\ci{.17} & .17\ci{.18} \\
+\quad re-observed only (Ro) & .69\ci{.09} & .07\ci{.06} & 8.3$\times$ & .10\ci{.15} & .53\ci{.14} & .93\ci{.11} & .50\ci{.25} & .37\ci{.20} & .18\ci{.12} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -81,11 +81,11 @@ CausalArmor-style (executor) & .44\ci{.09} & .23\ci{.07} & 1.8$\times$ & .67\ci{
 \toprule
 Id & Criterion & Estimate [95\% CI] & Result \\
 \midrule
-S1 & upstream detection >= .50 and >= +.20 over MELON-all, AgentSentry & .86 [.79, .92] & fail \\
+S1 & upstream detection >= .50 and >= +.20 over MELON-all, AgentSentry & .86 [.80, .92] & fail \\
 S2 & ASR <= .05 and below NoDef & .03 [.02, .04] & pass \\
 S3 & UA beats CCG-block by >= .05; non-inferior to AgentSentry (δ=.05) & -0.01 [-0.03, .01] & fail \\
 S4 & clean flag <= .15 (vs R3 .58-.72); BU non-inferior (δ=.05) & .30 [.21, .39] & fail \\
-S8 & benign cost <= 8x NoDef & 11.11 [9.10, 13.25] & fail \\
+S8 & benign cost <= 8x NoDef & 11.11 [9.08, 13.27] & fail \\
 S6 & upstream UA beats CCG-purify by >= .05 & -0.00 [-0.03, .02] & fail \\
 S5 & accidental harm <= .5x NoDef; utility beats NoDef & .05 & fail \\
 S7 & Ro false-flag on clean correct runs <= .20 + .05 (upper CI) & .16 [.00, .32] & fail \\

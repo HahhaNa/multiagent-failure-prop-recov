@@ -19,7 +19,6 @@ Setup:
 | CCG ablations | 1 sample per test (no SPRT); block without repair; executor-context purification; masked only; re-observed only; M ∨ Nz ∨ Ro; N-remove neutralizer |
 | Counterfactual baselines | MELON at the executor, MELON at every agent, AgentSentry-style (executor), CausalArmor-style leave-one-out (executor) |
 | Prevention | repeat prompt, spotlighting, ProtectAI DeBERTa detector, tool filter, PromptArmor (Qwen3-8B), IPIGuard-style |
-| Status | the M ∨ Nz ∨ Ro and N-remove ablations on AgentDojo are still running; their rows in `summary.md` are partial until regenerated |
 | Adaptive | A1 task-coupled value substitution (33 tasks × 2 modes); A2 delegated-instruction tasks (5 tasks × 5 seeds, benign) |
 
 **MELON port.** The port was checked against the official MELON code, run locally on single-agent AgentDojo
@@ -56,6 +55,9 @@ Findings:
 - **Repair does not help here.** On AgentDojo, CCG's UA equals CCG-block's and CCG-purify's. Masked-criterion flags
   on persistent environment injections mostly cannot be localized: the masked run still performs the write after
   every read is neutralized. Such writes are therefore blocked rather than repaired.
+- **Adding neutralization buys little.** M ∨ Nz ∨ Ro reaches ASR 0.027, against CCG's 0.030, but with 37% clean
+  flags and 15.7× cost.
+- **Removing sources instead of rewriting them weakens repair.** The N-remove neutralizer lowers UA to 0.29.
 - **Masked only vs re-observed only.** Masked only is the better detector here: 0.83 upstream detection at 0.08
   clean flags. Re-observation adds false flags and catches few persistent injections, as designed.
 
